@@ -19,6 +19,7 @@ import { useProfileStore, useSettingsStore } from "./stores";
 import { useAuthStore } from "./stores/authStore";
 import { useLibraryStore } from "./stores/libraryStore";
 import { useAddonStore } from "./stores/addonStore";
+import { useSubscriptionStore } from "./stores/subscriptionStore";
 import { useEffect } from "react";
 
 function ProfileGuard({ children }: { children: React.ReactNode }) {
@@ -42,17 +43,16 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   const loadFromServer = useLibraryStore((s) => s.loadFromServer);
   const loadSettingsFromServer = useSettingsStore((s) => s.loadFromServer);
   const loadAddonsFromServer = useAddonStore((s) => s.loadFromServer);
+  const fetchSubscriptionStatus = useSubscriptionStore((s) => s.fetchStatus);
 
-  // Silently refresh library/history, settings, and addons from server on login.
-  // localStorage data is already shown immediately via Zustand persist,
-  // so this runs in the background and updates the UI once the response arrives.
   useEffect(() => {
     if (isAuthenticated) {
       loadFromServer();
       loadSettingsFromServer();
       loadAddonsFromServer();
+      fetchSubscriptionStatus();
     }
-  }, [isAuthenticated, loadFromServer, loadSettingsFromServer, loadAddonsFromServer]);
+  }, [isAuthenticated, loadFromServer, loadSettingsFromServer, loadAddonsFromServer, fetchSubscriptionStatus]);
 
   return <>{children}</>;
 }

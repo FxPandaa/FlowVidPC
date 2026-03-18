@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSettingsStore, PlayerType, StreamSortMode } from "../stores";
+import { useSubscriptionStore } from "../stores/subscriptionStore";
 import { tmdbService } from "../services/metadata/tmdb";
 import { SUBTITLE_LANGUAGES } from "../utils/subtitleLanguages";
 import { useUpdateChecker } from "../hooks/useUpdateChecker";
@@ -94,6 +95,12 @@ export function SettingsPage() {
   return (
     <div className="settings-page">
       <h1>Settings</h1>
+
+      {/* Subscription */}
+      <section className="settings-section">
+        <h2>Subscription</h2>
+        <SubscriptionSection />
+      </section>
 
       {/* Addons */}
       <section className="settings-section">
@@ -623,6 +630,131 @@ export function SettingsPage() {
         </button>
       </section>
     </div>
+  );
+}
+
+// ============================================================================
+// SUBSCRIPTION SECTION
+// ============================================================================
+
+function SubscriptionSection() {
+  const { subscription, isLoading, checkoutLoading, error, fetchStatus, startCheckout, openPortal, clearError } =
+    useSubscriptionStore();
+
+  useEffect(() => {
+    fetchStatus();
+  }, []);
+
+  // Re-fetch subscription status when user comes back to the app after checkout
+  useEffect(() => {
+    const onFocus = () => { fetchStatus(); };
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, []);
+
+  const isActive = subscription?.tier === "FlowVid_plus";
+  const isTrialing = subscription?.status === "trialing";
+
+  const handleUpgrade = async () => {
+    clearError();
+    const url = await startCheckout();
+    if (url) {
+      // Opens Creem checkout in the default browser
+      window.open(url, "_blank");
+    }
+  };
+
+  const handlePortal = async () => {
+    clearError();
+    const url = await openPortal();
+    if (url) {
+      window.open(url, "_blank");
+    }
+  };
+
+  const formatDate = (iso: string | null) => {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString(undefined, {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  if (isLoading) {
+    return <p className="section-description">Loading subscription status…</p>;
+  }
+
+  return (
+    <>
+      {error && (
+        <div className="update-status update-error" style={{ marginBottom: 12 }}>
+          <XCircle size={14} />
+          <span>{error}</span>
+        </div>
+      )}
+
+      <div className="setting-item">
+        <div className="setting-info">
+          <label>{isActive ? "FlowVid Plus" : "FlowVid Free"}{isTrialing ? " (Trial)" : ""}</label>
+          <p>
+            {isTrialing
+              ? `Free trial until ${formatDate(subscription?.currentPeriodEnd ?? null)}. You won't be charged until the trial ends.`
+              : isActive
+              ? `Active until ${formatDate(subscription?.currentPeriodEnd ?? null)}${subscription?.cancelAtPeriodEnd ? " (cancels at period end)" : " (renews automatically)"}`
+              : "Upgrade to FlowVid Plus for cross-device sync, multiple profiles, and more."}
+          </p>
+        </div>
+        {isActive ? (
+          <button className="btn btn-secondary" onClick={handlePortal}>
+            Manage Subscription
+          </button>
+        ) : (
+          <button
+            className="btn btn-primary"
+            onClick={handleUpgrade}
+            disabled={checkoutLoading}
+          >
+            {checkoutLoading ? "Opening…" : "Upgrade to Plus"}
+          </button>
+        )}
+      </div>
+
+      {isActive && (
+        <div className="setting-item">
+          <div className="setting-info">
+            <label>Plan</label>
+            <p>
+              {subscription?.plan ?? "standard"} &nbsp;·&nbsp; Status:{" "}
+              {isTrialing ? "trial" : (subscription?.status ?? "active")}
+            </p>
+          </div>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={fetchStatus}
+            disabled={isLoading}
+          >
+            Refresh
+          </button>
+        </div>
+      )}
+
+      {!isActive && (
+        <div className="setting-item">
+          <div className="setting-info">
+            <label>Already subscribed?</label>
+            <p>Restore your subscription after a device change or reinstall</p>
+          </div>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={fetchStatus}
+            disabled={isLoading}
+          >
+            {isLoading ? "Checking…" : "Refresh Status"}
+          </button>
+        </div>
+      )}
+    </>
   );
 }
 

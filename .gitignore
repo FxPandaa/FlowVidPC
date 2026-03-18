@@ -48,3 +48,6 @@ pnpm-lock.yaml
 
 # Screenshots (optional)
 screenshots/
+
+# Dev docs
+README.dev.md
