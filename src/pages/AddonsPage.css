@@ -1,0 +1,467 @@
+.addons-page {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 40px 24px 80px;
+}
+
+.addons-hero {
+  margin-bottom: 32px;
+}
+
+.addons-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0 0 6px;
+}
+
+.addons-subtitle {
+  font-size: 0.92rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+  margin: 0;
+  max-width: 520px;
+  line-height: 1.5;
+}
+
+/* Install form */
+.addons-install-section {
+  margin-bottom: 32px;
+}
+
+.addons-install-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.addons-url-input {
+  flex: 1;
+  height: 44px;
+  padding: 0 14px;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  color: var(--text-primary, #fff);
+  font-size: 0.92rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.addons-url-input:focus {
+  border-color: var(--primary, #00e5ff);
+}
+
+.addons-url-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.addons-install-btn {
+  height: 44px;
+  padding: 0 24px;
+  background: var(--primary, #00e5ff);
+  color: #000;
+  font-size: 0.92rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.15s;
+}
+
+.addons-install-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.addons-install-btn:not(:disabled):hover {
+  opacity: 0.85;
+}
+
+.addons-error {
+  margin: 10px 0 0;
+  font-size: 0.88rem;
+  color: #ff5c5c;
+}
+
+/* List header */
+.addons-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.addons-list-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.addons-count {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.addons-reorder-hint {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.3);
+}
+
+/* Empty state */
+.addons-empty {
+  padding: 60px 0;
+  text-align: center;
+}
+
+.addons-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.6;
+}
+
+.addons-empty-text {
+  font-size: 1.1rem;
+  color: var(--text-primary, #fff);
+  margin: 0 0 6px;
+  font-weight: 500;
+}
+
+.addons-empty-hint {
+  font-size: 0.88rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.45));
+  margin: 0;
+}
+
+/* Addon list */
+.addons-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.addon-card {
+  display: grid;
+  grid-template-columns: 28px 48px 1fr auto;
+  gap: 14px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+  padding: 14px 16px;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+  cursor: grab;
+}
+
+.addon-card:active {
+  cursor: grabbing;
+}
+
+.addon-card:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.addon-card--disabled {
+  opacity: 0.5;
+}
+
+.addon-card--drag-over {
+  border-color: var(--primary, #00e5ff);
+  box-shadow: 0 0 0 1px rgba(0, 229, 255, 0.2);
+}
+
+/* Drag handle */
+.addon-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.2);
+  font-size: 1.1rem;
+  cursor: grab;
+  user-select: none;
+}
+
+.addon-drag-handle:active {
+  cursor: grabbing;
+}
+
+.drag-dots {
+  line-height: 1;
+}
+
+/* Logo */
+.addon-card-logo {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.addon-logo-img {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.addon-logo-placeholder {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--primary, #00e5ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+/* Info */
+.addon-card-info {
+  min-width: 0;
+}
+
+.addon-card-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 3px;
+}
+
+.addon-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+}
+
+.addon-version {
+  font-size: 0.75rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.4));
+}
+
+.addon-badge-disabled {
+  font-size: 0.68rem;
+  font-weight: 600;
+  background: rgba(255, 92, 92, 0.15);
+  color: #ff5c5c;
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+.addon-priority {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.25);
+  margin-left: auto;
+}
+
+.addon-description {
+  font-size: 0.82rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.45));
+  margin: 0 0 6px;
+  line-height: 1.4;
+  max-width: 480px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.addon-resources {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.resource-chip,
+.type-chip {
+  font-size: 0.7rem;
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-weight: 500;
+}
+
+.resource-chip {
+  background: rgba(0, 229, 255, 0.1);
+  color: var(--primary, #00e5ff);
+}
+
+.type-chip {
+  background: rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.addon-update-btn {
+  width: 30px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.92rem;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addon-update-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.addon-update-btn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--primary, #00e5ff);
+}
+
+.addons-update-all-btn {
+  height: 30px;
+  padding: 0 14px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 6px;
+  color: var(--primary, #00e5ff);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.addons-update-all-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.addons-update-all-btn:not(:disabled):hover {
+  background: rgba(0, 229, 255, 0.14);
+}
+
+/* Actions */
+.addon-card-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.addon-action-btn {
+  width: 30px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: var(--text-primary, #fff);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addon-action-btn:disabled {
+  opacity: 0.25;
+  cursor: not-allowed;
+}
+
+.addon-action-btn:not(:disabled):hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.addon-toggle-btn {
+  padding: 4px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.addon-toggle-btn--on {
+  background: rgba(0, 229, 255, 0.12);
+  border-color: rgba(0, 229, 255, 0.25);
+  color: var(--primary, #00e5ff);
+}
+
+.addon-toggle-btn:hover {
+  filter: brightness(1.15);
+}
+
+.addon-remove-btn {
+  width: 30px;
+  height: 28px;
+  background: none;
+  border: 1px solid rgba(255, 92, 92, 0.2);
+  border-radius: 6px;
+  color: #ff5c5c;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: background 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.addon-remove-btn:hover {
+  background: rgba(255, 92, 92, 0.1);
+}
+
+/* Loading indicator */
+.addons-disclaimer {
+  margin: 8px 0 0;
+  font-size: 0.75rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.35));
+  text-align: center;
+}
+
+.addons-loading {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  font-size: 0.82rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.5));
+  background: rgba(20, 20, 30, 0.85);
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .addons-install-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .addon-card {
+    grid-template-columns: 20px 40px 1fr;
+    gap: 10px;
+  }
+
+  .addon-card-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .addon-priority {
+    display: none;
+  }
+
+  .addons-reorder-hint {
+    display: none;
+  }
+}

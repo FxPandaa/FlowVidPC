@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# MPV Binaries (too large for GitHub - distribute via releases)
+src-tauri/resources/mpv/*.dll
+src-tauri/resources/mpv/*.exe
+src-tauri/lib/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test
+coverage/
+
+# Temp
+tmp/
+temp/
+*.tmp
+
+# Package locks (keep package-lock.json)
+yarn.lock
+pnpm-lock.yaml
+
+# Screenshots (optional)
+screenshots/

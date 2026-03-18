@@ -1,0 +1,12 @@
+.home-page {
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.content-rows {
+  position: relative;
+  margin-top: -64px;
+  z-index: 10;
+  padding-bottom: 48px;
+  overflow: visible;
+}

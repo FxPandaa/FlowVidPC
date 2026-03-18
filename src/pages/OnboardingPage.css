@@ -1,0 +1,141 @@
+.onboarding-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 24px;
+}
+
+.onboarding-card {
+  max-width: 540px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 48px 40px;
+  text-align: center;
+}
+
+.onboarding-icon {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.onboarding-title {
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--text-primary, #fff);
+  margin: 0 0 12px;
+}
+
+.onboarding-lead {
+  font-size: 1rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.6));
+  margin: 0 0 40px;
+  line-height: 1.55;
+}
+
+/* Steps */
+.onboarding-steps {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  text-align: left;
+  margin-bottom: 40px;
+}
+
+.onboarding-step {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(0, 229, 255, 0.15);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  color: var(--primary, #00e5ff);
+  font-size: 0.88rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.step-body {
+  flex: 1;
+}
+
+.step-body strong {
+  display: block;
+  font-size: 0.97rem;
+  font-weight: 600;
+  color: var(--text-primary, #fff);
+  margin-bottom: 4px;
+}
+
+.step-body p {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.55));
+  line-height: 1.45;
+}
+
+/* Actions */
+.onboarding-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 28px;
+}
+
+.onboarding-primary-btn {
+  height: 48px;
+  background: var(--primary, #00e5ff);
+  color: #000;
+  font-size: 0.97rem;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.onboarding-primary-btn:hover {
+  opacity: 0.85;
+}
+
+.onboarding-secondary-btn {
+  height: 44px;
+  background: none;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.55));
+  font-size: 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.onboarding-secondary-btn:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  color: var(--text-primary, #fff);
+}
+
+/* Note */
+.onboarding-note {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.3);
+  margin: 0;
+  line-height: 1.5;
+}
+
+@media (max-width: 540px) {
+  .onboarding-card {
+    padding: 32px 20px;
+  }
+}

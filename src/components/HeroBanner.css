@@ -1,0 +1,316 @@
+﻿/* -- Hero Banner -- clean, cinematic, seamless fade -- */
+.hero-banner {
+  position: relative;
+  height: 80vh;
+  min-height: 540px;
+  max-height: 860px;
+  margin-bottom: 0;
+  overflow: hidden;
+  margin-top: -64px;
+  background-color: var(--bg-primary, #06080e);
+}
+
+/* Bottom fade -- long smooth gradient into bg */
+.hero-banner::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60%;
+  background: linear-gradient(
+    to top,
+    #06080e 0%,
+    #06080e 4%,
+    rgba(6, 8, 14, 0.95) 12%,
+    rgba(6, 8, 14, 0.8) 28%,
+    rgba(6, 8, 14, 0.5) 50%,
+    rgba(6, 8, 14, 0.15) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 3;
+}
+
+.hero-backdrop {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  pointer-events: none;
+}
+
+/* Top crossfade layer — starts invisible, no transition */
+.hero-backdrop-top {
+  opacity: 0;
+}
+
+/* When active, fade in with transition. When class is removed,
+   the transition property is also removed → opacity 0 is instant. */
+.hero-backdrop-top.hero-backdrop-active {
+  opacity: 1;
+  transition: opacity 0.8s ease;
+}
+
+/* Side gradients -- cinematic vignette, NO cyan glow */
+.hero-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(
+      to right,
+      rgba(6, 8, 14, 0.9) 0%,
+      rgba(6, 8, 14, 0.6) 20%,
+      rgba(6, 8, 14, 0.2) 40%,
+      transparent 65%
+    ),
+    linear-gradient(
+      to left,
+      rgba(6, 8, 14, 0.5) 0%,
+      rgba(6, 8, 14, 0.2) 5%,
+      transparent 15%
+    ),
+    linear-gradient(
+      to top,
+      #06080e 0%,
+      rgba(6, 8, 14, 0.4) 12%,
+      transparent 35%
+    );
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Content -- positioned left, clean typography */
+.hero-content {
+  position: absolute;
+  bottom: 16%;
+  left: 56px;
+  max-width: 760px;
+  z-index: 5;
+  transition: opacity 0.4s ease;
+  opacity: 1;
+}
+
+.hero-content-fade {
+  opacity: 0;
+}
+
+/* Type badge -- flat, no gradient */
+/* Title -- plain white, no gradient text */
+.hero-title {
+  font-size: 56px;
+  font-weight: 700;
+  line-height: 1.1;
+  margin-bottom: 0;
+  letter-spacing: -0.03em;
+  color: white;
+}
+
+.hero-logo {
+  display: block;
+  max-width: 620px;
+  max-height: 230px;
+  object-fit: contain;
+  margin-bottom: 0;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.55));
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.hero-logo.hero-logo-loaded {
+  opacity: 1;
+}
+
+.hero-heading {
+  min-height: 132px;
+  display: flex;
+  align-items: flex-end;
+  margin-bottom: 12px;
+}
+
+.hero-title-pending {
+  width: 100%;
+  height: 100px;
+}
+
+/* Meta -- clean, spaced */
+.hero-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0;
+  margin-bottom: 14px;
+}
+
+.hero-meta-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.hero-meta-chip + .hero-meta-chip {
+  margin-left: 10px;
+}
+
+.hero-meta-chip + .hero-meta-chip::before {
+  content: "•";
+  margin-right: 10px;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.hero-rating-chip {
+  color: var(--text-secondary);
+}
+
+.hero-rating-chip .star {
+  color: #fbbf24;
+  font-size: 12px;
+}
+
+.hero-type-chip,
+.hero-genre-chip {
+  color: var(--text-tertiary);
+}
+
+/* Overview */
+.hero-overview {
+  font-size: 15px;
+  line-height: 1.68;
+  color: rgba(255, 255, 255, 0.84);
+  margin-bottom: 30px;
+  max-width: 640px;
+}
+
+/* Action buttons -- flat, clean */
+.hero-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.hero-btn {
+  padding: 12px 28px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  transition: opacity var(--transition-fast);
+}
+
+.hero-btn.btn-primary {
+  background: var(--primary);
+  color: #000;
+  border: none;
+}
+
+.hero-btn.btn-primary:hover {
+  opacity: 0.85;
+}
+
+.hero-btn.btn-secondary {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: white;
+}
+
+.hero-btn.btn-secondary:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+/* Loading */
+.hero-loading {
+  background: var(--bg-primary);
+}
+
+.hero-skeleton {
+  position: absolute;
+  bottom: 18%;
+  left: 48px;
+  width: 480px;
+}
+
+.hero-skeleton::before {
+  content: "";
+  display: block;
+  height: 48px;
+  width: 75%;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: var(--radius-md);
+  margin-bottom: 16px;
+  animation: pulse 1.5s ease infinite;
+}
+
+.hero-skeleton::after {
+  content: "";
+  display: block;
+  height: 64px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: var(--radius-md);
+  animation: pulse 1.5s ease infinite;
+}
+
+/* Dot indicators -- minimal */
+.hero-dots {
+  position: absolute;
+  bottom: 36px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.hero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.hero-dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.hero-dot-active {
+  background: var(--primary);
+  width: 20px;
+  border-radius: 4px;
+}
+
+.hero-dot-active:hover {
+  background: var(--primary);
+}
+
+@media (max-width: 768px) {
+  .hero-content {
+    left: 24px;
+    right: 24px;
+    max-width: none;
+    bottom: 12%;
+  }
+
+  .hero-title {
+    font-size: 36px;
+  }
+
+  .hero-logo {
+    max-width: 92%;
+    max-height: 140px;
+  }
+
+  .hero-heading {
+    min-height: 90px;
+  }
+}

@@ -1,0 +1,18 @@
+.subtitle-overlay {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 80%;
+  padding: 8px 16px;
+  border-radius: 4px;
+  text-align: center;
+  pointer-events: none;
+  z-index: 50;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  font-weight: 500;
+}
+
+.subtitle-line {
+  display: inline;
+}
