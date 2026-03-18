@@ -6,6 +6,7 @@ import { SUBTITLE_LANGUAGES } from "../utils/subtitleLanguages";
 import { useUpdateChecker } from "../hooks/useUpdateChecker";
 import { useNavigate } from "react-router-dom";
 import { Check, XCircle } from "../components/Icons";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import "./SettingsPage.css";
 
 // Font options for subtitles
@@ -660,7 +661,7 @@ function SubscriptionSection() {
     const url = await startCheckout();
     if (url) {
       // Opens Creem checkout in the default browser
-      window.open(url, "_blank");
+      await openUrl(url);
     }
   };
 
@@ -668,7 +669,7 @@ function SubscriptionSection() {
     clearError();
     const url = await openPortal();
     if (url) {
-      window.open(url, "_blank");
+      await openUrl(url);
     }
   };
 
