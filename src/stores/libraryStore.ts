@@ -189,6 +189,9 @@ export const useLibraryStore = create<LibraryState>()(
       addToLibrary: (item) => {
         const newItem: LibraryItem = {
           ...item,
+          year: typeof item.year === "string" ? parseInt(item.year, 10) || 0 : item.year,
+          rating: typeof item.rating === "string" ? parseFloat(item.rating) || undefined : item.rating,
+          runtime: typeof item.runtime === "string" ? parseInt(item.runtime, 10) || undefined : item.runtime,
           id: crypto.randomUUID(),
           addedAt: new Date().toISOString(),
           isFavorite: false,
@@ -513,9 +516,15 @@ export const useLibraryStore = create<LibraryState>()(
 
           if (res.ok) {
             const { data } = await res.json();
+            const serverLibrary = data.library || [];
+            const serverHistory = data.history || [];
+            const local = get();
+
+            // Only overwrite local data if the server actually has data,
+            // otherwise keep local state (prevents wiping on first sync)
             set({
-              library: data.library || [],
-              watchHistory: data.history || [],
+              library: serverLibrary.length > 0 ? serverLibrary : local.library,
+              watchHistory: serverHistory.length > 0 ? serverHistory : local.watchHistory,
               lastSyncAt: new Date().toISOString(),
             });
           }
