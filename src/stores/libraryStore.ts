@@ -456,6 +456,14 @@ export const useLibraryStore = create<LibraryState>()(
         try {
           console.log(`[sync] Syncing library (${state.library.length} items) and history (${state.watchHistory.length} items) to ${API_URL}`);
 
+          // Coerce types for items that may have string values from Cinemeta
+          const cleanLibrary = state.library.map((item) => ({
+            ...item,
+            year: typeof item.year === "string" ? parseInt(item.year, 10) || 0 : item.year,
+            rating: typeof item.rating === "string" ? parseFloat(String(item.rating)) || undefined : item.rating,
+            runtime: typeof item.runtime === "string" ? parseInt(String(item.runtime), 10) || undefined : item.runtime,
+          }));
+
           const [libRes, histRes] = await Promise.all([
             fetch(`${API_URL}/sync/library`, {
               method: "POST",
@@ -463,7 +471,7 @@ export const useLibraryStore = create<LibraryState>()(
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${authState.token}`,
               },
-              body: JSON.stringify({ profileId, library: state.library }),
+              body: JSON.stringify({ profileId, library: cleanLibrary }),
             }),
             fetch(`${API_URL}/sync/history`, {
               method: "POST",
@@ -516,15 +524,9 @@ export const useLibraryStore = create<LibraryState>()(
 
           if (res.ok) {
             const { data } = await res.json();
-            const serverLibrary = data.library || [];
-            const serverHistory = data.history || [];
-            const local = get();
-
-            // Only overwrite local data if the server actually has data,
-            // otherwise keep local state (prevents wiping on first sync)
             set({
-              library: serverLibrary.length > 0 ? serverLibrary : local.library,
-              watchHistory: serverHistory.length > 0 ? serverHistory : local.watchHistory,
+              library: data.library || [],
+              watchHistory: data.history || [],
               lastSyncAt: new Date().toISOString(),
             });
           }

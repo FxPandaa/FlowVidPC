@@ -176,14 +176,6 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           error: null,
         });
-
-        // Clear profile and library data on logout
-        import("./profileStore").then(({ useProfileStore }) =>
-          useProfileStore.getState().clearAll(),
-        );
-        import("./libraryStore").then(({ useLibraryStore }) =>
-          useLibraryStore.getState().switchProfile(null),
-        );
       },
 
       verifyEmail: async (code: string) => {

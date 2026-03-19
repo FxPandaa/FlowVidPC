@@ -48,8 +48,8 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isAuthenticated) {
       loadFromServer();
-      loadSettingsFromServer();
       loadAddonsFromServer();
+      loadSettingsFromServer();
       fetchSubscriptionStatus();
     }
   }, [isAuthenticated, loadFromServer, loadSettingsFromServer, loadAddonsFromServer, fetchSubscriptionStatus]);
