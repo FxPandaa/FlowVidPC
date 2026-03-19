@@ -234,10 +234,14 @@ export function LibraryPage() {
 function LibraryCWCard({ item }: { item: WatchHistoryItem }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [imgError, setImgError] = useState(false);
+  // Construct reliable MetaHub fallback URLs from IMDB ID
+  const metahubBackdrop = item.imdbId ? `https://images.metahub.space/background/medium/${item.imdbId}/img` : null;
+  const metahubPoster = item.imdbId ? `https://images.metahub.space/poster/medium/${item.imdbId}/img` : null;
   // Prefer backdrop (landscape) over poster — matches Apple TV's style
-  const validBackdrop = useValidatedImage(item.backdrop || null);
-  const validPoster = useValidatedImage(item.poster || null);
+  const validBackdrop = useValidatedImage(item.backdrop || metahubBackdrop);
+  const validPoster = useValidatedImage(item.poster || metahubPoster);
   const displayImage = validBackdrop || validPoster;
+  const metahubFallback = metahubBackdrop || metahubPoster;
   const { removeFromHistory } = useLibraryStore();
   const navigate = useNavigate();
 
@@ -306,6 +310,12 @@ function LibraryCWCard({ item }: { item: WatchHistoryItem }) {
             alt={item.title}
             onError={() => setImgError(true)}
           />
+        ) : metahubFallback && imgError ? (
+          <img
+            src={metahubFallback}
+            alt={item.title}
+            onError={(e) => (e.currentTarget.style.display = "none")}
+          />
         ) : (
           <div className="lcw-placeholder">
             {item.type === "movie" ? <Film size={28} /> : <Tv size={28} />}
@@ -329,7 +339,7 @@ function LibraryCWCard({ item }: { item: WatchHistoryItem }) {
               S{item.season}E{item.episode}
             </span>
           )}
-          <h4 className="lcw-title">{item.title}</h4>
+          <h4 className="lcw-title">{item.title || item.imdbId}</h4>
           {item.type === "series" && item.episodeTitle && (
             <span className="lcw-ep-title">{item.episodeTitle}</span>
           )}

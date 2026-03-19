@@ -67,7 +67,11 @@ export function ContinueWatching({ items }: ContinueWatchingProps) {
 function ContinueWatchingCard({ item }: { item: WatchHistoryItem }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [posterError, setPosterError] = useState(false);
-  const validatedPoster = useValidatedImage(item.poster || null);
+  // Always construct a reliable MetaHub poster URL from the IMDB ID
+  const metahubPoster = item.imdbId ? `https://images.metahub.space/poster/medium/${item.imdbId}/img` : null;
+  // Use stored poster if available, otherwise fall back to MetaHub
+  const posterUrl = item.poster || metahubPoster;
+  const validatedPoster = useValidatedImage(posterUrl);
   const { removeFromHistory } = useLibraryStore();
   const navigate = useNavigate();
 
@@ -123,6 +127,12 @@ function ContinueWatchingCard({ item }: { item: WatchHistoryItem }) {
               alt={item.title}
               onError={() => setPosterError(true)}
             />
+          ) : metahubPoster && posterError ? (
+            <img
+              src={metahubPoster}
+              alt={item.title}
+              onError={(e) => (e.currentTarget.style.display = "none")}
+            />
           ) : (
             <div className="continue-card-placeholder">
               {item.type === "movie" ? <Film size={28} /> : <Tv size={28} />}
@@ -158,7 +168,7 @@ function ContinueWatchingCard({ item }: { item: WatchHistoryItem }) {
           </button>
         </div>
         <div className="continue-card-info">
-          <h3 className="continue-card-title">{item.title}</h3>
+          <h3 className="continue-card-title">{item.title || item.imdbId}</h3>
           {item.type === "series" && item.season && item.episode && (
             <span className="continue-card-episode">
               S{item.season}:E{item.episode}
