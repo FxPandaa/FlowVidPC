@@ -588,9 +588,13 @@ export function PlayerPage() {
         return;
       }
 
-      // If a direct stream URL was passed from the details page, play it immediately
+      // If a direct stream URL was passed, check if it came from continue watching
+      // (synced URLs may be expired debrid links). Always re-resolve via addons.
       const stateStreamUrl = location.state?.streamUrl as string | undefined;
-      if (stateStreamUrl) {
+      const fromContinueWatching = !location.state?.details;
+
+      if (stateStreamUrl && !fromContinueWatching) {
+        // From details page (fresh URL) — play immediately
         await loadStream(stateStreamUrl);
         // Load addon streams in background for source switching
         const contentId =
@@ -605,26 +609,49 @@ export function PlayerPage() {
         return;
       }
 
-      // No stream passed — query addons and show picker
+      // Continue watching or no stream URL — resolve a fresh stream via addons
       const contentId =
         type === "movie"
           ? imdbId
           : `${imdbId}:${parseInt(season || "1")}:${parseInt(episode || "1")}`;
 
-      setShowSourcePicker(true);
-      setIsLoading(false);
       setIsLoadingStreams(true);
+      let streamPicked = false;
+
       const results = await getStreamsProgressive(type as "movie" | "series", contentId, (partial, pending) => {
         setAddonStreamResults(partial);
         setPendingAddons(pending);
+
+        // Auto-pick the first available stream as soon as results come in
+        if (partial.length > 0 && !streamPicked) {
+          const allStreams = partial.flatMap((r) => r.streams);
+          if (allStreams.length > 0) {
+            const best = allStreams[0];
+            const bestUrl = best.url ?? (best.infoHash ? `magnet:?xt=urn:btih:${best.infoHash}` : null);
+            if (bestUrl) {
+              streamPicked = true;
+              setSelectedStream(best);
+              loadStream(bestUrl);
+            }
+          }
+        }
       });
+
       setIsLoadingStreams(false);
       setAddonStreamResults(results);
 
-      const allStreams = results.flatMap((r) => r.streams);
-      if (allStreams.length === 0) {
-        setShowSourcePicker(false);
-        setError("No streams found. Make sure you have addons installed and enabled from the Addons page.");
+      if (!streamPicked) {
+        const allStreams = results.flatMap((r) => r.streams);
+        if (allStreams.length > 0) {
+          const firstUrl = allStreams[0].url ?? (allStreams[0].infoHash ? `magnet:?xt=urn:btih:${allStreams[0].infoHash}` : null);
+          if (firstUrl) {
+            setSelectedStream(allStreams[0]);
+            await loadStream(firstUrl);
+          }
+        } else {
+          setShowSourcePicker(false);
+          setError("No streams found. Make sure you have addons installed and enabled from the Addons page.");
+        }
       }
     } catch (err) {
       console.error("Player initialization failed:", err);
