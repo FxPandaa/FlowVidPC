@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSettingsStore, PlayerType, StreamSortMode } from "../stores";
 import { useSubscriptionStore } from "../stores/subscriptionStore";
+import { useAuthStore } from "../stores/authStore";
 import { tmdbService } from "../services/metadata/tmdb";
 import { SUBTITLE_LANGUAGES } from "../utils/subtitleLanguages";
 import { useUpdateChecker } from "../hooks/useUpdateChecker";
@@ -630,6 +631,12 @@ export function SettingsPage() {
           Reset All Settings
         </button>
       </section>
+
+      {/* Account */}
+      <section className="settings-section">
+        <h2>Account</h2>
+        <DeleteAccountSection />
+      </section>
     </div>
   );
 }
@@ -716,7 +723,9 @@ function SubscriptionSection() {
                 ? subscription?.cancelAtPeriodEnd
                   ? `Cancels on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
                   : `Renews on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
-                : "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more. Try it free for 1 month!"}
+                : subscription?.trialEligible === false
+                  ? "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more."
+                  : "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more. Try it free for 1 month!"}
             </p>
           </div>
           <div className="subscription-header-actions">
@@ -730,7 +739,7 @@ function SubscriptionSection() {
                 onClick={handleUpgrade}
                 disabled={checkoutLoading}
               >
-                {checkoutLoading ? "Opening…" : "Upgrade to Plus"}
+                {checkoutLoading ? "Opening…" : subscription?.trialEligible === false ? "Subscribe to Plus" : "Start Free Trial"}
               </button>
             )}
           </div>
@@ -831,5 +840,115 @@ function AboutSection() {
         </div>
       )}
     </>
+  );
+}
+
+// ============================================================================
+// DELETE ACCOUNT SECTION
+// ============================================================================
+
+function DeleteAccountSection() {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [password, setPassword] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const navigate = useNavigate();
+
+  const handleDelete = async () => {
+    if (!password) {
+      setDeleteError("Enter your password to confirm");
+      return;
+    }
+
+    setDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const token = useAuthStore.getState().token;
+      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const res = await fetch(`${API_URL}/auth/account`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete account");
+      }
+
+      // Clear all local state and redirect to login
+      useAuthStore.getState().logout();
+      localStorage.clear();
+      navigate("/login");
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Failed to delete account");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (!showConfirm) {
+    return (
+      <div className="settings-row">
+        <div className="settings-row-info">
+          <label>Delete Account</label>
+          <p>Permanently delete your account and all associated data</p>
+        </div>
+        <button
+          className="btn btn-ghost danger"
+          onClick={() => setShowConfirm(true)}
+        >
+          Delete Account
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="delete-account-confirm">
+      <div className="delete-account-warning">
+        <strong>⚠️ This action is permanent and cannot be undone.</strong>
+        <p>
+          Your library, watch history, profiles, addons, and all account data
+          will be permanently deleted. If you have an active subscription it will
+          remain active until the end of your billing period — manage it through
+          the subscription portal before deleting.
+        </p>
+      </div>
+      <div className="delete-account-form">
+        <input
+          type="password"
+          className="input"
+          placeholder="Enter your password to confirm"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          disabled={deleting}
+        />
+        {deleteError && (
+          <div className="form-error">{deleteError}</div>
+        )}
+        <div className="delete-account-actions">
+          <button
+            className="btn btn-ghost"
+            onClick={() => { setShowConfirm(false); setPassword(""); setDeleteError(null); }}
+            disabled={deleting}
+          >
+            Cancel
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={handleDelete}
+            disabled={deleting || !password}
+          >
+            {deleting ? "Deleting..." : "Permanently Delete Account"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }

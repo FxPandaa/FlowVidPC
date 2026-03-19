@@ -27,6 +27,7 @@ export interface SubscriptionInfo {
   currentPeriodStart: string | null;
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
+  trialEligible?: boolean;
 }
 
 interface SubscriptionState {
@@ -96,8 +97,13 @@ export const useSubscriptionStore = create<SubscriptionState>()((set) => ({
         throw new Error(data.error || "Failed to start checkout");
       }
       const data = await res.json();
+      // Store trial eligibility so UI can reflect it
+      const current = useSubscriptionStore.getState().subscription;
+      if (current) {
+        set({ subscription: { ...current, trialEligible: data.data.trialEligible } });
+      }
       set({ checkoutLoading: false });
-      // API returns { success: true, data: { url: "...", provider: "creem" } }
+      // API returns { success: true, data: { url: "...", provider: "creem", trialEligible } }
       return data.data.url as string;
     } catch (err) {
       set({

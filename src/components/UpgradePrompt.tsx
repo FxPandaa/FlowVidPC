@@ -7,7 +7,7 @@ interface UpgradePromptProps {
 }
 
 export function UpgradePrompt({ onClose }: UpgradePromptProps) {
-  const { startCheckout, checkoutLoading } = useSubscriptionStore();
+  const { startCheckout, checkoutLoading, subscription } = useSubscriptionStore();
 
   const handleUpgrade = async () => {
     const url = await startCheckout();
@@ -22,7 +22,9 @@ export function UpgradePrompt({ onClose }: UpgradePromptProps) {
         <span className="upgrade-badge">FlowVid+</span>
         <h2 className="upgrade-title">Upgrade to unlock all features</h2>
         <p className="upgrade-desc">
-          Install addons, save to your library, sync across devices, and more. Try it free for 1 month — cancel anytime.
+          Install addons, save to your library, sync across devices, and more.{subscription?.trialEligible === false
+            ? " Subscribe now to get started."
+            : " Try it free for 1 month — cancel anytime."}
         </p>
         <div className="upgrade-features">
           <div className="upgrade-feature">Install addons</div>

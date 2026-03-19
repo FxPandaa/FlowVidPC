@@ -14,7 +14,7 @@ const MAX_CACHE_ENTRIES = 500;
 // Known trusted image hosts where HEAD requests are unreliable (redirects to
 // CDNs that may not support HEAD). For these hosts we skip the HEAD check and
 // rely on the <img> onError fallback in components instead.
-const TRUSTED_IMAGE_HOSTS = ["images.metahub.space"];
+const TRUSTED_IMAGE_HOSTS = ["images.metahub.space", "image.tmdb.org"];
 
 function isTrustedImageUrl(url: string): boolean {
   try {

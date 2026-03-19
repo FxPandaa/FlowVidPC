@@ -329,6 +329,12 @@ export function PlayerPage() {
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
 
+    // Sync isFullscreen state when user exits fullscreen via Escape or browser chrome
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+
     return () => {
       // Save progress to server when leaving the player
       saveProgress();
@@ -336,6 +342,11 @@ export function PlayerPage() {
       if (serverSyncIntervalRef.current)
         clearInterval(serverSyncIntervalRef.current);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      // Exit fullscreen when navigating away from the player
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
     };
   }, [id, season, episode]);
 

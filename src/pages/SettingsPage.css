@@ -594,6 +594,71 @@
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
+/* ============================================================
+   DELETE ACCOUNT
+   ============================================================ */
+
+.delete-account-confirm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.delete-account-warning {
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--text-secondary);
+}
+
+.delete-account-warning strong {
+  color: #ef4444;
+  display: block;
+  margin-bottom: 8px;
+}
+
+.delete-account-warning p {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.delete-account-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.delete-account-form .input {
+  max-width: 400px;
+}
+
+.delete-account-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 8px 20px;
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .tier-feature {
   display: flex;
   align-items: center;
