@@ -193,9 +193,9 @@ class EmbeddedMpvService {
         // Video output - use classic gpu backend for maximum compatibility.
         // Some libmpv builds show black frames with gpu-next in embedded mode.
         vo: "gpu",
-        // Disable hw decode in embedded mode to avoid driver-specific black-frame issues.
-        // (Audio + subtitles can continue while video stays black with buggy hwdec paths.)
-        hwdec: "no",
+        // Hardware decoding — let MPV pick the best hw decoder (D3D11VA on Windows).
+        // Falls back to software automatically if unsupported.
+        hwdec: "auto",
         // Expand limited-range (16-235) content to full-range (0-255) before
         // writing to the HWND surface.  The Windows compositor does NOT do
         // this expansion on its own; 'auto' usually means limited output
