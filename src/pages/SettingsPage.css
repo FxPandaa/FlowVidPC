@@ -400,56 +400,93 @@
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-lg);
-  padding: 20px;
-  margin-top: 12px;
+  padding: 20px 24px;
+  margin-top: 4px;
+  transition: border-color var(--transition-normal);
 }
 
-.subscription-status-row {
+.subscription-card--active {
+  border-color: rgba(124, 58, 237, 0.25);
+}
+
+.subscription-card--trial {
+  border-color: rgba(245, 158, 11, 0.25);
+}
+
+.subscription-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  align-items: flex-start;
+  gap: 16px;
 }
 
-.subscription-status-row:last-of-type {
-  border-bottom: none;
+.subscription-plan-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.subscription-plan-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.subscription-plan-desc {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.subscription-header-actions {
+  flex-shrink: 0;
+  padding-top: 2px;
+}
+
+.subscription-details {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  gap: 32px;
+}
+
+.subscription-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.subscription-status-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.indicator-active { color: #22c55e; }
+.indicator-trial { color: #f59e0b; }
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
 }
 
 .subscription-label {
-  font-size: 13px;
+  font-size: 11px;
   color: var(--text-tertiary);
   font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .subscription-value {
   font-size: 13px;
   color: var(--text-primary);
   font-weight: 500;
-}
-
-.subscription-badge {
-  display: inline-block;
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  font-size: 12px;
-  font-weight: 600;
-  color: #fff;
-}
-
-.subscription-actions {
-  margin-top: 16px;
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.subscription-hint {
-  font-size: 12px;
-  color: var(--text-tertiary);
-  margin: 0;
-  font-style: italic;
 }
 
 .subscription-error {
@@ -460,8 +497,7 @@
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius-md);
   padding: 10px 14px;
-  margin-top: 10px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-size: 13px;
   color: #ef4444;
 }
@@ -472,21 +508,49 @@
   font-size: 14px;
 }
 
+.subscription-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* Upgrade button */
+.btn-upgrade {
+  background: linear-gradient(135deg, #7c3aed, #a855f7);
+  color: #fff;
+  font-weight: 600;
+  padding: 10px 22px;
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  transition: opacity var(--transition-fast);
+}
+
+.btn-upgrade:hover {
+  opacity: 0.88;
+}
+
+.btn-upgrade:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Tier Display */
 .tier-display {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-bottom: 14px;
+  margin-bottom: 2px;
 }
 
 .tier-badge {
   display: inline-block;
-  padding: 4px 14px;
+  padding: 3px 10px;
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
 .tier-badge.tier-free {
@@ -500,25 +564,32 @@
   color: #fff;
 }
 
-.tier-renews {
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-
-.tier-canceling {
-  font-size: 12px;
+.tier-badge.tier-trial {
+  background: rgba(245, 158, 11, 0.15);
   color: #f59e0b;
-  font-style: italic;
+  border: 1px solid rgba(245, 158, 11, 0.25);
 }
 
-/* Feature Comparison */
+.tier-badge.tier-canceled {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.tier-badge.tier-pastdue {
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+  border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+/* Feature list */
 .tier-features {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 16px;
-  padding: 14px;
-  background: rgba(255, 255, 255, 0.03);
+  gap: 8px;
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.02);
   border-radius: var(--radius-lg);
   border: 1px solid rgba(255, 255, 255, 0.04);
 }
@@ -526,9 +597,14 @@
 .tier-feature {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   font-size: 13px;
   color: var(--text-secondary);
+}
+
+.tier-feature svg {
+  color: var(--primary);
+  flex-shrink: 0;
 }
 
 .tier-feature-locked {

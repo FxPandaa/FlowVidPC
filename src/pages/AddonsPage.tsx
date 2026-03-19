@@ -1,15 +1,19 @@
 import { useState, useRef } from "react";
 import { useAddonStore } from "../stores/addonStore";
+import { useFeatureGate } from "../hooks/useFeatureGate";
+import { UpgradePrompt } from "../components";
 import "./AddonsPage.css";
 
 export function AddonsPage() {
   const { addons, isLoading, error, installAddon, removeAddon, toggleAddon, reorderAddon, refreshManifest, clearError } =
     useAddonStore();
+  const { canInstallAddons } = useFeatureGate();
   const [manifestUrl, setManifestUrl] = useState("");
   const [installing, setInstalling] = useState(false);
   const [installError, setInstallError] = useState<string | null>(null);
   const [updatingAll, setUpdatingAll] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   // Drag-to-reorder state
   const dragIdxRef = useRef<number | null>(null);
@@ -93,9 +97,11 @@ export function AddonsPage() {
         </p>
       </div>
 
+      {showUpgrade && <UpgradePrompt onClose={() => setShowUpgrade(false)} />}
+
       {/* Install form */}
       <section className="addons-install-section">
-        <form className="addons-install-form" onSubmit={handleInstall}>
+        <form className="addons-install-form" onSubmit={canInstallAddons ? handleInstall : (e) => { e.preventDefault(); setShowUpgrade(true); }}>
           <input
             type="url"
             className="addons-url-input"

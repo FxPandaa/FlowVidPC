@@ -1,0 +1,105 @@
+.upgrade-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: upgradeFadeIn 0.15s ease;
+}
+
+@keyframes upgradeFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.upgrade-modal {
+  background: rgba(12, 14, 20, 0.98);
+  border: 1px solid rgba(124, 58, 237, 0.2);
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5), 0 0 80px rgba(124, 58, 237, 0.06);
+  border-radius: var(--radius-lg);
+  max-width: 400px;
+  width: 90%;
+  padding: 32px 28px;
+  text-align: center;
+  animation: upgradeSlideIn 0.2s ease;
+}
+
+@keyframes upgradeSlideIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.upgrade-badge {
+  display: inline-block;
+  background: #7c3aed;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 14px;
+  border-radius: var(--radius-full);
+  margin-bottom: 16px;
+}
+
+.upgrade-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.upgrade-desc {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.upgrade-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  text-align: left;
+  margin-bottom: 24px;
+}
+
+.upgrade-feature {
+  font-size: 13px;
+  color: var(--text-secondary);
+  padding-left: 18px;
+  position: relative;
+}
+
+.upgrade-feature::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.upgrade-cta {
+  width: 100%;
+  padding: 12px;
+  font-size: 15px;
+}
+
+.upgrade-dismiss {
+  background: none;
+  border: none;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  margin-top: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color var(--transition-fast);
+}
+
+.upgrade-dismiss:hover {
+  color: var(--text-secondary);
+}

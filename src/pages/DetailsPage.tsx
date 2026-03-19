@@ -13,6 +13,8 @@ import { PersonModal } from "../components";
 import { SourceSelectPopup } from "../components/SourceSelectPopup";
 import { useLibraryStore, useSettingsStore } from "../stores";
 import { useAddonStore, type AddonStreamResult } from "../stores/addonStore";
+import { useFeatureGate } from "../hooks/useFeatureGate";
+import { UpgradePrompt } from "../components";
 import { useValidatedImage } from "../utils/useValidatedImage";
 import {
   StarFilled,
@@ -55,6 +57,7 @@ export function DetailsPage() {
   >(new Map());
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const [activeTrailer, setActiveTrailer] = useState<{ key: string; name: string } | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
 
   const trailersRef = useRef<HTMLDivElement>(null);
   const castRef = useRef<HTMLDivElement>(null);
@@ -71,6 +74,7 @@ export function DetailsPage() {
   } = useLibraryStore();
   const { blurUnwatchedEpisodes } = useSettingsStore();
   const { getStreamsProgressive } = useAddonStore();
+  const { canWatch, canAddToLibrary } = useFeatureGate();
 
   const isMovie = type === "movie";
   const validLogo = useValidatedImage(details?.logo);
@@ -196,6 +200,10 @@ export function DetailsPage() {
     season?: number,
     episode?: number,
   ) => {
+    if (!canWatch) {
+      setShowUpgrade(true);
+      return;
+    }
     if (isMovie) {
       navigate(`/player/${type}/${id}`, { state: { streamUrl, details } });
     } else {
@@ -209,6 +217,10 @@ export function DetailsPage() {
 
   const handleLibraryToggle = () => {
     if (!details?.imdbId) return;
+    if (!inLibrary && !canAddToLibrary) {
+      setShowUpgrade(true);
+      return;
+    }
 
     if (inLibrary) {
       removeFromLibrary(details.imdbId);
@@ -383,6 +395,10 @@ export function DetailsPage() {
             <button
               className="btn btn-primary"
               onClick={() => {
+                if (!canWatch) {
+                  setShowUpgrade(true);
+                  return;
+                }
                 if (isMovie) {
                   setStreams([]);
                   setShowEpisodePopup(true);
@@ -935,6 +951,8 @@ export function DetailsPage() {
           onClose={() => setSelectedPersonId(null)}
         />
       )}
+
+      {showUpgrade && <UpgradePrompt onClose={() => setShowUpgrade(false)} />}
     </div>
   );
 }

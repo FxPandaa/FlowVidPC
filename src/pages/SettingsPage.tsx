@@ -653,14 +653,15 @@ function SubscriptionSection() {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  const isActive = subscription?.tier === "FlowVid_plus";
+  const isActive = subscription?.status === "active" || subscription?.status === "trialing";
   const isTrialing = subscription?.status === "trialing";
+  const isCanceled = subscription?.status === "canceled";
+  const isPastDue = subscription?.status === "past_due";
 
   const handleUpgrade = async () => {
     clearError();
     const url = await startCheckout();
     if (url) {
-      // Opens Creem checkout in the default browser
       await openUrl(url);
     }
   };
@@ -682,79 +683,89 @@ function SubscriptionSection() {
     });
   };
 
-  if (isLoading) {
+  if (isLoading && !subscription) {
     return <p className="section-description">Loading subscription status…</p>;
   }
 
   return (
     <>
       {error && (
-        <div className="update-status update-error" style={{ marginBottom: 12 }}>
-          <XCircle size={14} />
+        <div className="subscription-error">
           <span>{error}</span>
+          <button className="btn btn-ghost" onClick={clearError}>✕</button>
         </div>
       )}
 
-      <div className="setting-item">
-        <div className="setting-info">
-          <label>{isActive ? "FlowVid Plus" : "FlowVid Free"}{isTrialing ? " (Trial)" : ""}</label>
-          <p>
-            {isTrialing
-              ? `Free trial until ${formatDate(subscription?.currentPeriodEnd ?? null)}. You won't be charged until the trial ends.`
-              : isActive
-              ? `Active until ${formatDate(subscription?.currentPeriodEnd ?? null)}${subscription?.cancelAtPeriodEnd ? " (cancels at period end)" : " (renews automatically)"}`
-              : "Upgrade to FlowVid Plus for cross-device sync, multiple profiles, and more."}
-          </p>
+      <div className={`subscription-card ${isActive ? "subscription-card--active" : ""} ${isTrialing ? "subscription-card--trial" : ""}`}>
+        <div className="subscription-header">
+          <div className="subscription-plan-info">
+            <div className="tier-display">
+              <span className="subscription-plan-name">
+                {isActive ? "FlowVid Plus" : "FlowVid Free"}
+              </span>
+              {isTrialing && <span className="tier-badge tier-trial">TRIAL</span>}
+              {subscription?.status === "active" && !isTrialing && <span className="tier-badge tier-plus">PRO</span>}
+              {isCanceled && <span className="tier-badge tier-canceled">CANCELED</span>}
+              {isPastDue && <span className="tier-badge tier-pastdue">PAST DUE</span>}
+              {!isActive && !isCanceled && !isPastDue && <span className="tier-badge tier-free">FREE</span>}
+            </div>
+            <p className="subscription-plan-desc">
+              {isTrialing
+                ? `Your free trial is active until ${formatDate(subscription?.currentPeriodEnd ?? null)}.`
+                : isActive
+                ? subscription?.cancelAtPeriodEnd
+                  ? `Cancels on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
+                  : `Renews on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
+                : "You're on the free plan. Upgrade to FlowVid+ to stream, save to your library, sync across devices, and more."}
+            </p>
+          </div>
+          <div className="subscription-header-actions">
+            {isActive ? (
+              <button className="btn btn-secondary" onClick={handlePortal}>
+                Manage
+              </button>
+            ) : (
+              <button
+                className="btn btn-upgrade"
+                onClick={handleUpgrade}
+                disabled={checkoutLoading}
+              >
+                {checkoutLoading ? "Opening…" : "Upgrade to Plus"}
+              </button>
+            )}
+          </div>
         </div>
-        {isActive ? (
-          <button className="btn btn-secondary" onClick={handlePortal}>
-            Manage Subscription
-          </button>
-        ) : (
-          <button
-            className="btn btn-primary"
-            onClick={handleUpgrade}
-            disabled={checkoutLoading}
-          >
-            {checkoutLoading ? "Opening…" : "Upgrade to Plus"}
-          </button>
+
+        {isActive && (
+          <div className="subscription-details">
+            <div className="subscription-detail-item">
+              <span className="subscription-label">Status</span>
+              <span className={`subscription-status-indicator ${isTrialing ? "indicator-trial" : "indicator-active"}`}>
+                <span className="status-dot" />
+                {isTrialing ? "Trial" : "Active"}
+              </span>
+            </div>
+            <div className="subscription-detail-item">
+              <span className="subscription-label">Plan</span>
+              <span className="subscription-value">{subscription?.plan === "standard" ? "Standard" : subscription?.plan ?? "Standard"}</span>
+            </div>
+            <div className="subscription-detail-item">
+              <span className="subscription-label">{isTrialing ? "Trial ends" : subscription?.cancelAtPeriodEnd ? "Cancels on" : "Next billing"}</span>
+              <span className="subscription-value">{formatDate(subscription?.currentPeriodEnd ?? null)}</span>
+            </div>
+          </div>
         )}
       </div>
 
-      {isActive && (
-        <div className="setting-item">
-          <div className="setting-info">
-            <label>Plan</label>
-            <p>
-              {subscription?.plan ?? "standard"} &nbsp;·&nbsp; Status:{" "}
-              {isTrialing ? "trial" : (subscription?.status ?? "active")}
-            </p>
-          </div>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={fetchStatus}
-            disabled={isLoading}
-          >
-            Refresh
-          </button>
-        </div>
-      )}
-
-      {!isActive && (
-        <div className="setting-item">
-          <div className="setting-info">
-            <label>Already subscribed?</label>
-            <p>Restore your subscription after a device change or reinstall</p>
-          </div>
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={fetchStatus}
-            disabled={isLoading}
-          >
-            {isLoading ? "Checking…" : "Refresh Status"}
-          </button>
-        </div>
-      )}
+      <div className="subscription-actions">
+        <button
+          className="btn btn-ghost btn-sm"
+          onClick={fetchStatus}
+          disabled={isLoading}
+        >
+          {isLoading ? "Checking…" : "Refresh Status"}
+        </button>
+      </div>
     </>
   );
 }
