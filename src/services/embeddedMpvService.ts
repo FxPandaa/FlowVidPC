@@ -64,11 +64,11 @@ const HIGH_QUALITY_PROFILE: Record<string, string> = {
   // string writes with "unsupported format for accessing property".
 
   // --- Scaling ---
-  scale: "ewa_lanczossharp",
-  cscale: "ewa_lanczossharp",
+  scale: "spline36",
+  cscale: "spline36",
   dscale: "mitchell",
   "correct-downscaling": "yes",
-  "linear-downscaling": "yes",
+  "linear-downscaling": "no",
   "sigmoid-upscaling": "yes",
 
   // --- Dithering & debanding ---
@@ -85,8 +85,7 @@ const HIGH_QUALITY_PROFILE: Record<string, string> = {
   "tone-mapping-max-boost": "3.0",
 
   // --- Debanding fine-tuning ---
-  // Slightly stronger deband passes for gradient banding in dark scenes.
-  "deband-iterations": "2",
+  "deband-iterations": "1",
   "deband-threshold": "48",
   "deband-range": "16",
   "deband-grain": "24",
