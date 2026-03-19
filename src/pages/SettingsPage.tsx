@@ -716,7 +716,7 @@ function SubscriptionSection() {
                 ? subscription?.cancelAtPeriodEnd
                   ? `Cancels on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
                   : `Renews on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
-                : "You're on the free plan. Upgrade to FlowVid+ to stream, save to your library, sync across devices, and more."}
+                : "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more. Try it free for 1 month!"}
             </p>
           </div>
           <div className="subscription-header-actions">
