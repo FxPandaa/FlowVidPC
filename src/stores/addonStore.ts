@@ -275,20 +275,27 @@ export const useAddonStore = create<AddonState>()(
           const payload = get().addons.map((a) => ({
             id: a.id,
             manifestUrl: a.manifestUrl,
-            manifest: a.manifest,
+            manifest: JSON.stringify(a.manifest),
             enabled: a.enabled,
-            order: a.order,
-            installedAt: a.installedAt,
-            lastFetched: a.lastFetched,
+            sortOrder: a.order,
           }));
 
-          await fetch(`${API_URL}/sync/addons`, {
+          console.log(`[sync] Syncing ${payload.length} addons to ${API_URL}`);
+
+          const res = await fetch(`${API_URL}/sync/addons`, {
             method: "PUT",
             headers: getAuthHeaders(),
             body: JSON.stringify({ addons: payload }),
           });
+
+          if (!res.ok) {
+            const body = await res.text();
+            console.error(`[sync] Addon sync failed: ${res.status}`, body);
+          } else {
+            console.log('[sync] Addons synced successfully');
+          }
         } catch (err) {
-          console.warn("[addons] Sync to server failed:", err);
+          console.error("[sync] Addon sync fetch error:", err);
         }
       },
 
@@ -303,13 +310,13 @@ export const useAddonStore = create<AddonState>()(
           if (!response.ok) return;
 
           const data = await response.json();
-          const serverAddons: InstalledAddon[] = (data.data?.addons ?? []).map(
+          const serverAddons: InstalledAddon[] = (data.addons ?? []).map(
             (a: any) => ({
               id: a.id,
               manifestUrl: a.manifestUrl,
               manifest: a.manifest,
               enabled: a.enabled ?? true,
-              order: a.order ?? 0,
+              order: a.sortOrder ?? 0,
               installedAt: a.installedAt ?? new Date().toISOString(),
               lastFetched: a.lastFetched ?? new Date().toISOString(),
             })

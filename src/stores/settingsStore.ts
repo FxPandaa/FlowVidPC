@@ -212,7 +212,8 @@ export const useSettingsStore = create<SettingsState>()(
         const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
         try {
-          await fetch(`${API_URL}/sync/settings`, {
+          console.log(`[sync] Syncing settings to ${API_URL}`);
+          const res = await fetch(`${API_URL}/sync/settings`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -235,13 +236,14 @@ export const useSettingsStore = create<SettingsState>()(
               },
             }),
           });
+          if (!res.ok) {
+            const body = await res.text();
+            console.error(`[sync] Settings sync failed: ${res.status}`, body);
+          } else {
+            console.log('[sync] Settings synced successfully');
+          }
         } catch (error) {
-          if (
-            error instanceof TypeError &&
-            (error.message.includes("Failed to fetch") || error.message.includes("NetworkError"))
-          )
-            return;
-          console.error("Failed to sync settings with server:", error);
+          console.error('[sync] Settings sync fetch error:', error);
         }
       },
 

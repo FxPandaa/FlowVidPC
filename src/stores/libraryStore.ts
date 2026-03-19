@@ -451,8 +451,9 @@ export const useLibraryStore = create<LibraryState>()(
         const profileId = state.currentProfileId;
 
         try {
-          // Fire both sync requests in parallel
-          await Promise.all([
+          console.log(`[sync] Syncing library (${state.library.length} items) and history (${state.watchHistory.length} items) to ${API_URL}`);
+
+          const [libRes, histRes] = await Promise.all([
             fetch(`${API_URL}/sync/library`, {
               method: "POST",
               headers: {
@@ -471,11 +472,21 @@ export const useLibraryStore = create<LibraryState>()(
             }),
           ]);
 
+          if (!libRes.ok) {
+            const body = await libRes.text();
+            console.error(`[sync] Library sync failed: ${libRes.status}`, body);
+          }
+          if (!histRes.ok) {
+            const body = await histRes.text();
+            console.error(`[sync] History sync failed: ${histRes.status}`, body);
+          }
+          if (libRes.ok && histRes.ok) {
+            console.log('[sync] Library & history synced successfully');
+          }
+
           set({ lastSyncAt: new Date().toISOString() });
         } catch (error) {
-          // Only log real errors, not network failures from unconnected backend
-          if (error instanceof TypeError && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) return;
-          console.error('Failed to sync with server:', error);
+          console.error('[sync] Sync fetch error:', error);
         } finally {
           set({ isSyncing: false });
         }
