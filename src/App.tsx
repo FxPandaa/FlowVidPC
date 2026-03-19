@@ -18,6 +18,7 @@ import {
 import { useProfileStore, useSettingsStore } from "./stores";
 import { useAuthStore } from "./stores/authStore";
 import { useLibraryStore } from "./stores/libraryStore";
+import { flushPendingSync } from "./stores/libraryStore";
 import { useAddonStore } from "./stores/addonStore";
 import { useSubscriptionStore } from "./stores/subscriptionStore";
 import { useEffect } from "react";
@@ -53,6 +54,13 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
       fetchSubscriptionStatus();
     }
   }, [isAuthenticated, loadFromServer, loadSettingsFromServer, loadAddonsFromServer, fetchSubscriptionStatus]);
+
+  // Flush pending sync before the window closes so the server gets the latest data
+  useEffect(() => {
+    const handleBeforeUnload = () => flushPendingSync();
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   return <>{children}</>;
 }

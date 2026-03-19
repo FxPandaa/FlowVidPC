@@ -135,6 +135,75 @@ function debouncedSync(syncFn: () => Promise<void>): void {
   }, 2000);
 }
 
+/** Immediately flush any pending debounced sync (e.g. before app close). */
+export function flushPendingSync(): void {
+  if (syncTimeout) {
+    clearTimeout(syncTimeout);
+    syncTimeout = null;
+    useLibraryStore.getState().syncWithServer();
+  }
+}
+
+/** Merge two watch-history lists, keeping the newest version of each unique item. */
+function mergeWatchHistory(
+  local: WatchHistoryItem[],
+  server: WatchHistoryItem[],
+): WatchHistoryItem[] {
+  const map = new Map<string, WatchHistoryItem>();
+
+  const key = (item: WatchHistoryItem) =>
+    `${item.imdbId}:${item.season ?? ""}:${item.episode ?? ""}`;
+
+  for (const item of local) {
+    map.set(key(item), item);
+  }
+
+  for (const item of server) {
+    const k = key(item);
+    const existing = map.get(k);
+    if (
+      !existing ||
+      new Date(item.watchedAt).getTime() > new Date(existing.watchedAt).getTime()
+    ) {
+      map.set(k, item);
+    }
+  }
+
+  return Array.from(map.values())
+    .sort(
+      (a, b) =>
+        new Date(b.watchedAt).getTime() - new Date(a.watchedAt).getTime(),
+    )
+    .slice(0, 100);
+}
+
+/** Merge two library lists, keeping the newest version of each unique item. */
+function mergeLibrary(
+  local: LibraryItem[],
+  server: LibraryItem[],
+): LibraryItem[] {
+  const map = new Map<string, LibraryItem>();
+
+  for (const item of local) {
+    map.set(item.imdbId, item);
+  }
+
+  for (const item of server) {
+    const existing = map.get(item.imdbId);
+    if (
+      !existing ||
+      new Date(item.addedAt).getTime() > new Date(existing.addedAt).getTime()
+    ) {
+      map.set(item.imdbId, item);
+    }
+  }
+
+  return Array.from(map.values()).sort(
+    (a, b) =>
+      new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime(),
+  );
+}
+
 export const useLibraryStore = create<LibraryState>()(
   persist(
     (set, get) => ({
@@ -184,6 +253,11 @@ export const useLibraryStore = create<LibraryState>()(
           sortBy: "recent",
           searchQuery: "",
         });
+
+        // If this profile has no local cache, fetch from server
+        if (profileId && !state.profileData[profileId]) {
+          get().loadFromServer();
+        }
       },
 
       addToLibrary: (item) => {
@@ -467,6 +541,7 @@ export const useLibraryStore = create<LibraryState>()(
           const [libRes, histRes] = await Promise.all([
             fetch(`${API_URL}/sync/library`, {
               method: "POST",
+              keepalive: true,
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${authState.token}`,
@@ -475,6 +550,7 @@ export const useLibraryStore = create<LibraryState>()(
             }),
             fetch(`${API_URL}/sync/history`, {
               method: "POST",
+              keepalive: true,
               headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${authState.token}`,
@@ -524,11 +600,25 @@ export const useLibraryStore = create<LibraryState>()(
 
           if (res.ok) {
             const { data } = await res.json();
+            const serverLibrary: LibraryItem[] = data.library || [];
+            const serverHistory: WatchHistoryItem[] = data.history || [];
+            const localLibrary = get().library;
+            const localHistory = get().watchHistory;
+
+            // Merge instead of overwrite — keeps newer local items that
+            // haven't been synced to the server yet (e.g. app closed before
+            // debounced sync fired).
+            const mergedLibrary = mergeLibrary(localLibrary, serverLibrary);
+            const mergedHistory = mergeWatchHistory(localHistory, serverHistory);
+
             set({
-              library: data.library || [],
-              watchHistory: data.history || [],
+              library: mergedLibrary,
+              watchHistory: mergedHistory,
               lastSyncAt: new Date().toISOString(),
             });
+
+            // Push merged state to server so both sides converge
+            debouncedSync(() => get().syncWithServer());
           }
         } catch (error) {
           // Only log real errors, not network failures from unconnected backend
