@@ -3,6 +3,31 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { useAuthStore } from "./authStore";
 import { useSettingsStore } from "./settingsStore";
 
+const CINEMETA_BASE = "https://v3-cinemeta.strem.io";
+
+/** Fetch basic metadata (title, poster, backdrop) from Cinemeta for a single IMDB ID. */
+async function fetchCinemetaMeta(imdbId: string, type: "movie" | "series"): Promise<{
+  title: string;
+  poster?: string;
+  backdrop?: string;
+  year?: number;
+} | null> {
+  try {
+    const res = await fetch(`${CINEMETA_BASE}/meta/${type}/${imdbId}.json`);
+    if (!res.ok) return null;
+    const { meta } = await res.json();
+    if (!meta) return null;
+    return {
+      title: meta.name || meta.title || "",
+      poster: meta.poster,
+      backdrop: meta.background,
+      year: meta.year || (meta.releaseInfo ? parseInt(meta.releaseInfo) || undefined : undefined),
+    };
+  } catch {
+    return null;
+  }
+}
+
 export interface LibraryItem {
   id: string;
   imdbId: string;
@@ -119,6 +144,7 @@ interface LibraryState {
 
   syncWithServer: () => Promise<void>;
   loadFromServer: () => Promise<void>;
+  backfillMissingMetadata: () => Promise<void>;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
@@ -626,6 +652,90 @@ export const useLibraryStore = create<LibraryState>()(
           console.error('Failed to load from server:', error);
         } finally {
           set({ isLoading: false });
+          // Backfill missing metadata in the background
+          get().backfillMissingMetadata();
+        }
+      },
+
+      backfillMissingMetadata: async () => {
+        const state = get();
+
+        // Collect all items (library + history) that are missing title or poster
+        const libraryNeedsFix = state.library.filter(
+          (item) => !item.title || item.title === "TBA" || !item.poster,
+        );
+        const historyNeedsFix = state.watchHistory.filter(
+          (item) => !item.title || !item.poster,
+        );
+
+        if (libraryNeedsFix.length === 0 && historyNeedsFix.length === 0) return;
+
+        // Deduplicate by imdbId to avoid redundant fetches
+        const uniqueIds = new Map<string, "movie" | "series">();
+        for (const item of libraryNeedsFix) {
+          uniqueIds.set(item.imdbId, item.type);
+        }
+        for (const item of historyNeedsFix) {
+          uniqueIds.set(item.imdbId, item.type);
+        }
+
+        // Fetch metadata for all missing items (max 20 at a time to avoid spam)
+        const entries = Array.from(uniqueIds.entries()).slice(0, 20);
+        const metaMap = new Map<string, { title: string; poster?: string; backdrop?: string; year?: number }>();
+
+        await Promise.all(
+          entries.map(async ([imdbId, type]) => {
+            const meta = await fetchCinemetaMeta(imdbId, type);
+            if (meta && meta.title) {
+              metaMap.set(imdbId, meta);
+            }
+          }),
+        );
+
+        if (metaMap.size === 0) return;
+
+        // Apply fixes to library and watch history
+        let libraryChanged = false;
+        let historyChanged = false;
+
+        const updatedLibrary = state.library.map((item) => {
+          const meta = metaMap.get(item.imdbId);
+          if (!meta) return item;
+          if ((!item.title || item.title === "TBA") || !item.poster) {
+            libraryChanged = true;
+            return {
+              ...item,
+              title: (!item.title || item.title === "TBA") ? meta.title : item.title,
+              poster: item.poster || meta.poster,
+              backdrop: item.backdrop || meta.backdrop,
+              year: item.year || meta.year,
+            };
+          }
+          return item;
+        });
+
+        const updatedHistory = state.watchHistory.map((item) => {
+          const meta = metaMap.get(item.imdbId);
+          if (!meta) return item;
+          if (!item.title || !item.poster) {
+            historyChanged = true;
+            return {
+              ...item,
+              title: item.title || meta.title,
+              poster: item.poster || meta.poster,
+              backdrop: item.backdrop || meta.backdrop,
+            };
+          }
+          return item;
+        });
+
+        if (libraryChanged || historyChanged) {
+          set({
+            ...(libraryChanged ? { library: updatedLibrary } : {}),
+            ...(historyChanged ? { watchHistory: updatedHistory } : {}),
+          });
+          // Sync the fixed data to the server
+          debouncedSync(() => get().syncWithServer());
         }
       },
     }),
