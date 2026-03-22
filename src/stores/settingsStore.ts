@@ -1,5 +1,6 @@
 ﻿import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { platformFetch } from "../utils/platform";
 
 export type VideoQuality = "4k" | "1080p" | "720p" | "480p" | "auto";
 export type Theme = "dark" | "light" | "system";
@@ -221,7 +222,7 @@ export const useSettingsStore = create<SettingsState>()(
 
         try {
           console.log(`[sync] Syncing settings to ${API_URL}`);
-          const res = await fetch(`${API_URL}/sync/settings`, {
+          const res = await platformFetch(`${API_URL}/sync/settings`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -266,7 +267,7 @@ export const useSettingsStore = create<SettingsState>()(
         const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 
         try {
-          const res = await fetch(`${API_URL}/sync/settings${profileQuery}`, {
+          const res = await platformFetch(`${API_URL}/sync/settings${profileQuery}`, {
             headers: { Authorization: `Bearer ${authState.token}` },
           });
           if (res.ok) {

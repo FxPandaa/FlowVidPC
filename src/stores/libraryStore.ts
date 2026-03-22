@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useAuthStore } from "./authStore";
 import { useSettingsStore } from "./settingsStore";
+import { platformFetch } from "../utils/platform";
 
 const CINEMETA_BASE = "https://v3-cinemeta.strem.io";
 
@@ -565,7 +566,7 @@ export const useLibraryStore = create<LibraryState>()(
           }));
 
           const [libRes, histRes] = await Promise.all([
-            fetch(`${API_URL}/sync/library`, {
+            platformFetch(`${API_URL}/sync/library`, {
               method: "POST",
               keepalive: true,
               headers: {
@@ -574,7 +575,7 @@ export const useLibraryStore = create<LibraryState>()(
               },
               body: JSON.stringify({ profileId, library: cleanLibrary }),
             }),
-            fetch(`${API_URL}/sync/history`, {
+            platformFetch(`${API_URL}/sync/history`, {
               method: "POST",
               keepalive: true,
               headers: {
@@ -618,7 +619,7 @@ export const useLibraryStore = create<LibraryState>()(
 
         try {
           // Use the sync/all endpoint to load everything at once
-          const res = await fetch(`${API_URL}/sync/all${profileQuery}`, {
+          const res = await platformFetch(`${API_URL}/sync/all${profileQuery}`, {
             headers: {
               Authorization: `Bearer ${authState.token}`,
             },

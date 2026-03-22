@@ -22,6 +22,7 @@ import { useLibraryStore } from "./stores/libraryStore";
 import { flushPendingSync } from "./stores/libraryStore";
 import { useAddonStore } from "./stores/addonStore";
 import { useSubscriptionStore } from "./stores/subscriptionStore";
+import { platformFetch } from "./utils/platform";
 import { useEffect, useState } from "react";
 import type { Update } from "@tauri-apps/plugin-updater";
 import { check } from "@tauri-apps/plugin-updater";
@@ -107,7 +108,7 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
         if (targetProfileId) {
           try {
             const authState = useAuthStore.getState();
-            await fetch(`${API_URL}/profiles/${targetProfileId}/migrate`, {
+            await platformFetch(`${API_URL}/profiles/${targetProfileId}/migrate`, {
               method: "POST",
               headers: {
                 "Content-Type": "application/json",

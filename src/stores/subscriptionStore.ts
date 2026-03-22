@@ -5,6 +5,7 @@
 
 import { create } from "zustand";
 import { useAuthStore } from "./authStore";
+import { platformFetch } from "../utils/platform";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 
@@ -59,7 +60,7 @@ export const useSubscriptionStore = create<SubscriptionState>()((set) => ({
   fetchStatus: async () => {
     set({ isLoading: true, error: null });
     try {
-      const res = await fetch(`${API_URL}/billing/status`, {
+      const res = await platformFetch(`${API_URL}/billing/status`, {
         headers: authHeaders(),
       });
       if (!res.ok) {
@@ -82,7 +83,7 @@ export const useSubscriptionStore = create<SubscriptionState>()((set) => ({
   startCheckout: async () => {
     set({ checkoutLoading: true, error: null });
     try {
-      const res = await fetch(`${API_URL}/billing/checkout`, {
+      const res = await platformFetch(`${API_URL}/billing/checkout`, {
         method: "POST",
         headers: authHeaders(),
       });
@@ -116,7 +117,7 @@ export const useSubscriptionStore = create<SubscriptionState>()((set) => ({
 
   openPortal: async () => {
     try {
-      const res = await fetch(`${API_URL}/billing/portal`, {
+      const res = await platformFetch(`${API_URL}/billing/portal`, {
         method: "POST",
         headers: authHeaders(),
       });

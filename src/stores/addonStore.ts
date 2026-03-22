@@ -17,6 +17,7 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { fetchManifest, getAddonBaseUrl, fetchStreams } from "../services/addons/client";
 import type { InstalledAddon, AddonStream } from "../services/addons/types";
 import { useAuthStore } from "./authStore";
+import { platformFetch } from "../utils/platform";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 
@@ -282,7 +283,7 @@ export const useAddonStore = create<AddonState>()(
 
           console.log(`[sync] Syncing ${payload.length} addons to ${API_URL}`);
 
-          const res = await fetch(`${API_URL}/sync/addons`, {
+          const res = await platformFetch(`${API_URL}/sync/addons`, {
             method: "PUT",
             headers: getAuthHeaders(),
             body: JSON.stringify({ addons: payload }),
@@ -304,7 +305,7 @@ export const useAddonStore = create<AddonState>()(
         if (!isAuthenticated || !token) return;
 
         try {
-          const response = await fetch(`${API_URL}/sync/addons`, {
+          const response = await platformFetch(`${API_URL}/sync/addons`, {
             headers: getAuthHeaders(),
           });
           if (!response.ok) return;

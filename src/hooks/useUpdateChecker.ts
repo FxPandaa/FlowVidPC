@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { platformFetch } from "../utils/platform";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || "1.0.0";
@@ -37,7 +38,7 @@ export function useUpdateChecker() {
       // Detect platform
       const platform = detectPlatform();
 
-      const response = await fetch(
+      const response = await platformFetch(
         `${API_URL}/updates/check?platform=${platform}&version=${APP_VERSION}`,
       );
 

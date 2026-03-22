@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { useLibraryStore } from "./libraryStore";
 import { useAuthStore } from "./authStore";
+import { platformFetch } from "../utils/platform";
 
 export const MAX_PROFILES = 8;
 
@@ -171,7 +172,7 @@ export const useProfileStore = create<ProfileState>()(
         if (!authState.isAuthenticated || !authState.token) return;
 
         try {
-          await fetch(`${API_URL}/profiles/sync`, {
+          await platformFetch(`${API_URL}/profiles/sync`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -189,7 +190,7 @@ export const useProfileStore = create<ProfileState>()(
         if (!authState.isAuthenticated || !authState.token) return;
 
         try {
-          const res = await fetch(`${API_URL}/profiles`, {
+          const res = await platformFetch(`${API_URL}/profiles`, {
             headers: {
               Authorization: `Bearer ${authState.token}`,
             },

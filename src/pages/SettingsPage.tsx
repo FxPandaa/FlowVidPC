@@ -8,6 +8,7 @@ import { useUpdateChecker } from "../hooks/useUpdateChecker";
 import { useNavigate } from "react-router-dom";
 import { Check, XCircle } from "../components/Icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { platformFetch } from "../utils/platform";
 import "./SettingsPage.css";
 
 // Font options for subtitles
@@ -941,7 +942,7 @@ function DeleteAccountSection() {
     try {
       const token = useAuthStore.getState().token;
       const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
-      const res = await fetch(`${API_URL}/auth/account/delete`, {
+      const res = await platformFetch(`${API_URL}/auth/account/delete`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

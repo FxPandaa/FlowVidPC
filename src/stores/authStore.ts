@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
+import { platformFetch } from "../utils/platform";
 
 interface User {
   id: string;
@@ -43,7 +44,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await fetch(`${API_URL}/auth/login`, {
+          const response = await platformFetch(`${API_URL}/auth/login`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, password }),
@@ -79,7 +80,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const response = await fetch(`${API_URL}/auth/register`, {
+          const response = await platformFetch(`${API_URL}/auth/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ email, username, password }),
@@ -119,7 +120,7 @@ export const useAuthStore = create<AuthState>()(
         if (!refreshToken) return false;
 
         try {
-          const response = await fetch(`${API_URL}/auth/refresh`, {
+          const response = await platformFetch(`${API_URL}/auth/refresh`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refreshToken }),
@@ -157,7 +158,7 @@ export const useAuthStore = create<AuthState>()(
 
         // Invalidate refresh token on the server (fire-and-forget)
         if (token) {
-          fetch(`${API_URL}/auth/logout`, {
+          platformFetch(`${API_URL}/auth/logout`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -184,7 +185,7 @@ export const useAuthStore = create<AuthState>()(
 
         set({ isLoading: true, error: null });
         try {
-          const response = await fetch(`${API_URL}/auth/verify-email`, {
+          const response = await platformFetch(`${API_URL}/auth/verify-email`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -218,7 +219,7 @@ export const useAuthStore = create<AuthState>()(
         const { token } = get();
         if (!token) throw new Error("Not authenticated");
 
-        const response = await fetch(`${API_URL}/auth/resend-verification`, {
+        const response = await platformFetch(`${API_URL}/auth/resend-verification`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -264,14 +265,14 @@ export async function authenticatedFetch(
     Authorization: `Bearer ${state.token}`,
   } as Record<string, string>;
 
-  let response = await fetch(url, { ...options, headers });
+  let response = await platformFetch(url, { ...options, headers });
 
   if (response.status === 401 && state.refreshToken) {
     const refreshed = await state.attemptTokenRefresh();
     if (refreshed) {
       const newToken = useAuthStore.getState().token;
       headers.Authorization = `Bearer ${newToken}`;
-      response = await fetch(url, { ...options, headers });
+        response = await platformFetch(url, { ...options, headers });
     }
   }
 
