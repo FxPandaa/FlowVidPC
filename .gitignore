@@ -9,10 +9,10 @@ build/
 src-tauri/target/
 src-tauri/gen/
 
-# MPV Binaries (too large for GitHub - distribute via releases)
+# MPV Binaries
 src-tauri/resources/mpv/*.dll
 src-tauri/resources/mpv/*.exe
-src-tauri/lib/
+# src-tauri/lib/ is tracked via Git LFS
 
 # Environment files
 .env

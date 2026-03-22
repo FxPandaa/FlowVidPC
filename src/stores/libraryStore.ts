@@ -708,8 +708,8 @@ export const useLibraryStore = create<LibraryState>()(
               title: (!item.title || item.title === "TBA") ? meta.title : item.title,
               poster: item.poster || meta.poster,
               backdrop: item.backdrop || meta.backdrop,
-              year: item.year || meta.year,
-            };
+              year: item.year || meta.year || 0,
+            } as LibraryItem;
           }
           return item;
         });
@@ -730,10 +730,10 @@ export const useLibraryStore = create<LibraryState>()(
         });
 
         if (libraryChanged || historyChanged) {
-          set({
-            ...(libraryChanged ? { library: updatedLibrary } : {}),
-            ...(historyChanged ? { watchHistory: updatedHistory } : {}),
-          });
+          const patch: Partial<LibraryState> = {};
+          if (libraryChanged) patch.library = updatedLibrary;
+          if (historyChanged) patch.watchHistory = updatedHistory;
+          set(patch);
           // Sync the fixed data to the server
           debouncedSync(() => get().syncWithServer());
         }
