@@ -6,7 +6,7 @@
 import { create } from "zustand";
 import { useAuthStore } from "./authStore";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 
 export type SubscriptionStatus =
   | "not_subscribed"

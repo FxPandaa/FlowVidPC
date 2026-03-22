@@ -147,7 +147,7 @@ interface LibraryState {
   backfillMissingMetadata: () => Promise<void>;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 
 // Debounce timer for sync — prevents firing 3 full-sync POST requests on every button click
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;

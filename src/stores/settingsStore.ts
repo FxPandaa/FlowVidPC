@@ -217,7 +217,7 @@ export const useSettingsStore = create<SettingsState>()(
 
         const state = get();
         const profileId = useProfileStore.getState().activeProfileId;
-        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 
         try {
           console.log(`[sync] Syncing settings to ${API_URL}`);
@@ -263,7 +263,7 @@ export const useSettingsStore = create<SettingsState>()(
 
         const profileId = useProfileStore.getState().activeProfileId;
         const profileQuery = profileId ? `?profileId=${encodeURIComponent(profileId)}` : "";
-        const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+        const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 
         try {
           const res = await fetch(`${API_URL}/sync/settings${profileQuery}`, {

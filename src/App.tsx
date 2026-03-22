@@ -27,7 +27,7 @@ import type { Update } from "@tauri-apps/plugin-updater";
 import { check } from "@tauri-apps/plugin-updater";
 import { UpdateModal } from "./components";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 
 function ProfileGuard({ children }: { children: React.ReactNode }) {
   const { profiles, activeProfileId } = useProfileStore();

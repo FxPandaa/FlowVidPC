@@ -930,7 +930,7 @@ function DeleteAccountSection() {
 
     try {
       const token = useAuthStore.getState().token;
-      const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+      const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
       const res = await fetch(`${API_URL}/auth/account/delete`, {
         method: "POST",
         headers: {
