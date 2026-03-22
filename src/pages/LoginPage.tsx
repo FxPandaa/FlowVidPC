@@ -1,11 +1,13 @@
 import { useState, FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { useAuthStore } from "../stores";
 import "./LoginPage.css";
 
 export function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, register, verifyEmail, resendVerification, isLoading, error, clearError, user } = useAuthStore();
+  const returnTo = (location.state as { from?: string } | null)?.from ?? "/";
 
   const [isSignUp, setIsSignUp] = useState(false);
   const [showVerification, setShowVerification] = useState(false);
@@ -45,7 +47,7 @@ export function LoginPage() {
         if (currentUser && !currentUser.emailVerified) {
           setShowVerification(true);
         } else {
-          navigate("/");
+          navigate(returnTo, { replace: true });
         }
       } catch (err) {
         // Error is handled by the store
@@ -60,7 +62,7 @@ export function LoginPage() {
 
     try {
       await verifyEmail(verificationCode);
-      navigate("/");
+      navigate(returnTo, { replace: true });
     } catch (err) {
       // Error is handled by the store
     }
@@ -81,7 +83,7 @@ export function LoginPage() {
   };
 
   const handleSkipVerification = () => {
-    navigate("/");
+    navigate(returnTo, { replace: true });
   };
 
   const toggleMode = () => {

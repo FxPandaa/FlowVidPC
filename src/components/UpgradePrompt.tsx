@@ -1,7 +1,7 @@
 import { useSubscriptionStore } from "../stores/subscriptionStore";
 import { useAuthStore } from "../stores/authStore";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import "./UpgradePrompt.css";
 
 interface UpgradePromptProps {
@@ -10,13 +10,13 @@ interface UpgradePromptProps {
 
 export function UpgradePrompt({ onClose }: UpgradePromptProps) {
   const { startCheckout, checkoutLoading, subscription } = useSubscriptionStore();
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const hasSession = useAuthStore((s) => Boolean(s.token));
+  const location = useLocation();
   const navigate = useNavigate();
 
   const handleUpgrade = async () => {
-    if (!isAuthenticated) {
-      onClose();
-      navigate("/login");
+    if (!hasSession) {
+      navigate("/login", { replace: true, state: { from: location.pathname } });
       return;
     }
     const url = await startCheckout();
@@ -31,7 +31,7 @@ export function UpgradePrompt({ onClose }: UpgradePromptProps) {
         <span className="upgrade-badge">FlowVid+</span>
         <h2 className="upgrade-title">Upgrade to unlock all features</h2>
         <p className="upgrade-desc">
-          {!isAuthenticated
+          {!hasSession
             ? "Create an account to start your free trial and unlock all features."
             : <>Install addons, save to your library, sync across devices, and more.{subscription?.trialEligible === false
               ? " Subscribe now to get started."
@@ -50,7 +50,7 @@ export function UpgradePrompt({ onClose }: UpgradePromptProps) {
           onClick={handleUpgrade}
           disabled={checkoutLoading}
         >
-          {!isAuthenticated
+          {!hasSession
             ? "Create Account to Upgrade"
             : checkoutLoading ? "Opening…" : "Upgrade to FlowVid+"}
         </button>

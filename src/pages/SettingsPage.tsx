@@ -22,6 +22,7 @@ const FONT_FAMILIES = [
 
 export function SettingsPage() {
   const navigate = useNavigate();
+  const hasSession = useAuthStore((s) => Boolean(s.token));
   const {
     autoPlay,
     autoPlayNext,
@@ -677,6 +678,8 @@ export function SettingsPage() {
 // ============================================================================
 
 function SubscriptionSection() {
+  const navigate = useNavigate();
+  const hasSession = useAuthStore((s) => Boolean(s.token));
   const { subscription, isLoading, checkoutLoading, error, fetchStatus, startCheckout, openPortal, clearError } =
     useSubscriptionStore();
 
@@ -697,6 +700,10 @@ function SubscriptionSection() {
   const isPastDue = subscription?.status === "past_due";
 
   const handleUpgrade = async () => {
+    if (!hasSession) {
+      navigate("/login", { replace: true, state: { from: "/settings" } });
+      return;
+    }
     clearError();
     const url = await startCheckout();
     if (url) {
@@ -705,6 +712,10 @@ function SubscriptionSection() {
   };
 
   const handlePortal = async () => {
+    if (!hasSession) {
+      navigate("/login", { replace: true, state: { from: "/settings" } });
+      return;
+    }
     clearError();
     const url = await openPortal();
     if (url) {
