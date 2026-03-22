@@ -16,12 +16,15 @@ import {
   OnboardingPage,
 } from "./pages";
 import { useProfileStore, useSettingsStore } from "./stores";
+import { STOCK_AVATARS } from "./stores/profileStore";
 import { useAuthStore } from "./stores/authStore";
 import { useLibraryStore } from "./stores/libraryStore";
 import { flushPendingSync } from "./stores/libraryStore";
 import { useAddonStore } from "./stores/addonStore";
 import { useSubscriptionStore } from "./stores/subscriptionStore";
 import { useEffect } from "react";
+
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 function ProfileGuard({ children }: { children: React.ReactNode }) {
   const { profiles, activeProfileId } = useProfileStore();
@@ -41,10 +44,14 @@ function ProfileGuard({ children }: { children: React.ReactNode }) {
 
 function AppInitializer({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const user = useAuthStore((s) => s.user);
   const loadFromServer = useLibraryStore((s) => s.loadFromServer);
   const loadSettingsFromServer = useSettingsStore((s) => s.loadFromServer);
   const loadAddonsFromServer = useAddonStore((s) => s.loadFromServer);
   const fetchSubscriptionStatus = useSubscriptionStore((s) => s.fetchStatus);
+  const loadProfiles = useProfileStore((s) => s.loadProfiles);
+  const createProfile = useProfileStore((s) => s.createProfile);
+  const setActiveProfile = useProfileStore((s) => s.setActiveProfile);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -52,8 +59,67 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
       loadAddonsFromServer();
       loadSettingsFromServer();
       fetchSubscriptionStatus();
+
+      // Load profiles from server, then ensure a main profile exists
+      loadProfiles().then(async () => {        
+        const state = useProfileStore.getState();
+        let { profiles, activeProfileId } = state;
+        let targetProfileId: string | null = activeProfileId;
+
+        if (profiles.length === 0) {
+          // No profiles at all — auto-create a main profile
+          const name = user?.username || user?.email?.split("@")[0] || "Main";
+          const mainProfile = createProfile(name, "#6366f1", "👤", false);
+          if (mainProfile) {
+            useProfileStore.getState().updateProfile(mainProfile.id, {
+              avatarImage: STOCK_AVATARS[0].id,
+            });
+            // Preserve existing local library/watch data under the new profile
+            const libState = useLibraryStore.getState();
+            if (libState.library.length > 0 || libState.watchHistory.length > 0) {
+              useLibraryStore.setState((s) => ({
+                profileData: {
+                  ...s.profileData,
+                  [mainProfile.id]: {
+                    library: s.library,
+                    watchHistory: s.watchHistory,
+                  },
+                },
+                currentProfileId: mainProfile.id,
+              }));
+            }
+            setActiveProfile(mainProfile.id);
+            targetProfileId = mainProfile.id;
+          }
+        } else if (!activeProfileId) {
+          // Profiles exist but none selected — select the first one
+          setActiveProfile(profiles[0].id);
+          targetProfileId = profiles[0].id;
+        }
+
+        // Always migrate any server-side NULL-profile data to the active profile.
+        // This is a no-op if there's nothing under profile_id IS NULL, so it's
+        // safe to call every launch — it also handles existing accounts that had
+        // data before profiles were introduced.
+        if (targetProfileId) {
+          try {
+            const authState = useAuthStore.getState();
+            await fetch(`${API_URL}/profiles/${targetProfileId}/migrate`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${authState.token}`,
+              },
+            });
+            // Reload so any migrated data is reflected locally
+            loadFromServer();
+          } catch (e) {
+            console.error("Failed to migrate null-profile data:", e);
+          }
+        }
+      });
     }
-  }, [isAuthenticated, loadFromServer, loadSettingsFromServer, loadAddonsFromServer, fetchSubscriptionStatus]);
+  }, [isAuthenticated, loadFromServer, loadSettingsFromServer, loadAddonsFromServer, fetchSubscriptionStatus, loadProfiles, createProfile, setActiveProfile, user]);
 
   // Flush pending sync before the window closes so the server gets the latest data
   useEffect(() => {

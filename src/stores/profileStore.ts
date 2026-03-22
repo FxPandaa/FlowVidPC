@@ -23,11 +23,45 @@ export const PROFILE_AVATARS = [
   { color: "#3b82f6", icon: "🎵" },
 ] as const;
 
+// Stock profile pictures — gradient circles with glyph overlays.
+// Each is a small inline SVG data-URI so no external files are needed.
+function buildAvatarSvg(gradient: [string, string], symbol: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+    <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="${gradient[0]}"/>
+      <stop offset="100%" stop-color="${gradient[1]}"/>
+    </linearGradient></defs>
+    <circle cx="64" cy="64" r="64" fill="url(#g)"/>
+    <text x="64" y="64" text-anchor="middle" dominant-baseline="central" font-size="56">${symbol}</text>
+  </svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+export const STOCK_AVATARS: { id: string; url: string; label: string }[] = [
+  { id: "avatar-wolf",       url: buildAvatarSvg(["#6366f1", "#a855f7"], "🐺"), label: "Wolf" },
+  { id: "avatar-bear",       url: buildAvatarSvg(["#92400e", "#d97706"], "🐻"), label: "Bear" },
+  { id: "avatar-panda",      url: buildAvatarSvg(["#22c55e", "#16a34a"], "🐼"), label: "Panda" },
+  { id: "avatar-lion",       url: buildAvatarSvg(["#f59e0b", "#ef4444"], "🦁"), label: "Lion" },
+  { id: "avatar-penguin",    url: buildAvatarSvg(["#06b6d4", "#3b82f6"], "🐧"), label: "Penguin" },
+  { id: "avatar-fox",        url: buildAvatarSvg(["#ea580c", "#f97316"], "🦊"), label: "Fox" },
+  { id: "avatar-cat",        url: buildAvatarSvg(["#ec4899", "#f43f5e"], "🐱"), label: "Cat" },
+  { id: "avatar-dog",        url: buildAvatarSvg(["#8b5cf6", "#6366f1"], "🐶"), label: "Dog" },
+  { id: "avatar-owl",        url: buildAvatarSvg(["#1e3a5f", "#3b82f6"], "🦉"), label: "Owl" },
+  { id: "avatar-unicorn",    url: buildAvatarSvg(["#d946ef", "#ec4899"], "🦄"), label: "Unicorn" },
+  { id: "avatar-dragon",     url: buildAvatarSvg(["#059669", "#10b981"], "🐉"), label: "Dragon" },
+  { id: "avatar-alien",      url: buildAvatarSvg(["#14b8a6", "#06b6d4"], "👽"), label: "Alien" },
+  { id: "avatar-robot",      url: buildAvatarSvg(["#64748b", "#94a3b8"], "🤖"), label: "Robot" },
+  { id: "avatar-astronaut",  url: buildAvatarSvg(["#1e293b", "#475569"], "🧑‍🚀"), label: "Astronaut" },
+  { id: "avatar-ninja",      url: buildAvatarSvg(["#0f172a", "#334155"], "🥷"), label: "Ninja" },
+  { id: "avatar-star",       url: buildAvatarSvg(["#eab308", "#fbbf24"], "⭐"), label: "Star" },
+];
+
 export interface Profile {
   id: string;
   name: string;
   avatarColor: string;
   avatarIcon: string;
+  avatarImage?: string; // Stock avatar image ID or data URI
   isKid: boolean;
   createdAt: string;
 }
@@ -46,7 +80,7 @@ interface ProfileState {
   updateProfile: (
     id: string,
     updates: Partial<
-      Pick<Profile, "name" | "avatarColor" | "avatarIcon" | "isKid">
+      Pick<Profile, "name" | "avatarColor" | "avatarIcon" | "avatarImage" | "isKid">
     >,
   ) => void;
   deleteProfile: (id: string) => void;
@@ -164,7 +198,20 @@ export const useProfileStore = create<ProfileState>()(
           if (res.ok) {
             const data = await res.json();
             if (data.profiles && data.profiles.length > 0) {
-              set({ profiles: data.profiles });
+              // Merge: keep local avatarImage if server doesn't have one yet
+              const localProfiles = get().profiles;
+              let hadLocalImages = false;
+              const merged = data.profiles.map((sp: Profile) => {
+                const local = localProfiles.find((lp) => lp.id === sp.id);
+                const avatarImage = sp.avatarImage || (local ? local.avatarImage : undefined);
+                if (avatarImage && !sp.avatarImage) hadLocalImages = true;
+                return { ...sp, avatarImage };
+              });
+              set({ profiles: merged });
+              // Push local avatar images up to server if they weren't there yet
+              if (hadLocalImages) {
+                get().syncProfiles();
+              }
             }
           }
         } catch (error) {

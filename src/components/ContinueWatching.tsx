@@ -67,6 +67,7 @@ export function ContinueWatching({ items }: ContinueWatchingProps) {
 function ContinueWatchingCard({ item }: { item: WatchHistoryItem }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [posterError, setPosterError] = useState(false);
+
   // Always construct a reliable MetaHub poster URL from the IMDB ID
   const metahubPoster = item.imdbId ? `https://images.metahub.space/poster/medium/${item.imdbId}/img` : null;
   // Use stored poster if available, otherwise fall back to MetaHub

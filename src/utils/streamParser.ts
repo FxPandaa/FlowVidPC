@@ -27,6 +27,7 @@ export interface StreamInfo {
 
   // Additional
   languages: string[];
+  fileSize: string;
   isRemux: boolean;
   is3D: boolean;
 }
@@ -81,6 +82,7 @@ export function parseStreamInfo(title: string, description?: string): StreamInfo
     source: parseSource(t),
     releaseGroup: parseReleaseGroup(title),
     languages: parseLanguages(t),
+    fileSize: parseFileSizeFromText(combined),
     isRemux: t.includes("REMUX"),
     is3D: detect3D(t),
   };
@@ -425,6 +427,15 @@ function parseLanguages(t: string): string[] {
     Dutch: ["DUTCH", "DUT", "NLD"],
     Polish: ["POLISH", "POL"],
     Turkish: ["TURKISH", "TUR"],
+    Hungarian: ["HUNGARIAN", "HUN"],
+    Swedish: ["SWEDISH", "SWE"],
+    Norwegian: ["NORWEGIAN", "NOR"],
+    Danish: ["DANISH", "DAN"],
+    Finnish: ["FINNISH", "FIN"],
+    Czech: ["CZECH", "CZE", "CES"],
+    Romanian: ["ROMANIAN", "ROM", "RON"],
+    Thai: ["THAI", "THA"],
+    Vietnamese: ["VIETNAMESE", "VIE"],
     Multi: ["MULTI", "MULTI-AUDIO", "DUAL AUDIO", "DUAL-AUDIO"],
   };
 
@@ -451,6 +462,47 @@ function detect3D(t: string): boolean {
     t.includes("HALF-OU")
   );
 }
+
+/** Extract human-readable file size like "31.5 GB" from stream text */
+function parseFileSizeFromText(text: string): string {
+  // Match patterns like "31.5 GB", "💾 14.2 GB", "2.1 TB", "850 MB"
+  const match = text.match(/(\d+(?:\.\d+)?)\s*(TB|GB|MB)/i);
+  if (match) {
+    const num = parseFloat(match[1]);
+    const unit = match[2].toUpperCase();
+    return `${num} ${unit}`;
+  }
+  return "";
+}
+
+/** Map language names to short display labels */
+export const LANGUAGE_FLAGS: Record<string, string> = {
+  English: "EN",
+  Spanish: "ES",
+  French: "FR",
+  German: "DE",
+  Italian: "IT",
+  Portuguese: "PT",
+  Russian: "RU",
+  Japanese: "JA",
+  Korean: "KO",
+  Chinese: "ZH",
+  Hindi: "HI",
+  Arabic: "AR",
+  Dutch: "NL",
+  Polish: "PL",
+  Turkish: "TR",
+  Hungarian: "HU",
+  Swedish: "SV",
+  Norwegian: "NO",
+  Danish: "DA",
+  Finnish: "FI",
+  Czech: "CZ",
+  Romanian: "RO",
+  Thai: "TH",
+  Vietnamese: "VI",
+  Multi: "MULTI",
+};
 
 /**
  * Format file size from bytes to human readable
@@ -563,7 +615,7 @@ export function sortStreamsByQuality(
         addonName: r.addonName,
         addonLogo: r.addonLogo,
         stream,
-        score: scoreStream(stream.name ?? stream.title, stream.description),
+        score: scoreStream(stream.name ?? stream.title, [stream.name, stream.title, stream.description].filter(Boolean).join(" ")),
       });
     }
   }

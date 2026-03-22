@@ -266,6 +266,53 @@
   gap: 8px;
 }
 
+/* Stock avatar image grid */
+.avatar-image-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+}
+
+.avatar-image-option {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  padding: 0;
+  background: none;
+  overflow: hidden;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.avatar-image-option img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.avatar-image-option:hover {
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: scale(1.08);
+}
+
+.avatar-image-selected {
+  border-color: var(--primary);
+}
+
+.profile-avatar-img {
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profile-avatar-stock-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
 .avatar-option {
   width: 56px;
   height: 56px;

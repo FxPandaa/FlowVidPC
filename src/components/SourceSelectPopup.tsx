@@ -1,7 +1,7 @@
 import { createPortal } from "react-dom";
 import type { AddonStreamResult } from "../stores/addonStore";
 import { useSettingsStore } from "../stores";
-import { parseStreamInfo, sortStreamsByQuality } from "../utils/streamParser";
+import { parseStreamInfo, sortStreamsByQuality, type StreamInfo, LANGUAGE_FLAGS } from "../utils/streamParser";
 import {
   Play,
   X,
@@ -36,8 +36,155 @@ export function SourceSelectPopup({
   onSelectStream,
   onClose,
 }: SourceSelectPopupProps) {
-  const { streamSorting } = useSettingsStore();
+  const { streamSorting, streamDetailMode } = useSettingsStore();
   const totalStreams = streams.reduce((n, r) => n + r.streams.length, 0);
+
+  const renderDetailBadges = (info: StreamInfo) => (
+    <div className="source-detail-badges">
+      {info.hasDolbyVision && <DolbyVisionBadge height={16} />}
+      {info.hasHDR10Plus && <HDR10PlusBadge height={16} />}
+      {info.isHDR &&
+        !info.hasDolbyVision &&
+        !info.hasHDR10Plus &&
+        (info.hdrType === "HDR10" ? (
+          <HDR10Badge height={16} />
+        ) : (
+          <HDRBadge height={16} />
+        ))}
+      {info.hasAtmos && <DolbyAtmosBadge height={16} />}
+      {info.videoCodec && <span className="source-tag">{info.videoCodec}</span>}
+      {info.audioCodec && info.audioCodec !== "Atmos" && <span className="source-tag">{info.audioCodec}</span>}
+      {info.audioChannels && info.audioChannels !== "Unknown" && <span className="source-tag">{info.audioChannels}</span>}
+      {info.source && info.source !== "Unknown" && <span className="source-tag">{info.source}</span>}
+      {info.fileSize && <span className="source-tag source-tag-size">{info.fileSize}</span>}
+      {info.isRemux && <span className="source-tag source-tag-remux">Remux</span>}
+      {info.languages.length > 0 && info.languages.map((lang) => (
+        <span key={lang} className="source-tag source-tag-lang" title={lang}>
+          {LANGUAGE_FLAGS[lang] || lang}
+        </span>
+      ))}
+    </div>
+  );
+
+  const renderCard = (
+    key: string,
+    streamTitle: string,
+    description: string | undefined,
+    info: StreamInfo,
+    streamUrl: string,
+    addonName: string,
+    addonLogo?: string,
+  ) => {
+    if (streamDetailMode) {
+      return (
+        <div
+          key={key}
+          className="source-card source-card-detailed"
+          onClick={() => onSelectStream(streamUrl)}
+        >
+          <div className="source-card-left">
+            <div className="source-quality-col">
+              <span
+                className={`source-res-badge ${info.resolutionBadge === "4K" ? "res-4k" : info.resolutionBadge === "1080p" ? "res-1080p" : "res-other"}`}
+              >
+                {info.resolutionBadge}
+              </span>
+            </div>
+            <div className="source-details-col">
+              <span className="source-stream-title source-stream-title-full">
+                {streamTitle || description || "Stream"}
+              </span>
+              {description && streamTitle && (
+                <span className="source-stream-desc">{description}</span>
+              )}
+              {renderDetailBadges(info)}
+              {info.releaseGroup && (
+                <span className="source-release-group">{info.releaseGroup}</span>
+              )}
+            </div>
+          </div>
+          <div className="source-card-right">
+            <div className="source-addon-info">
+              {addonLogo && (
+                <img
+                  src={addonLogo}
+                  alt=""
+                  className="source-addon-logo"
+                />
+              )}
+              <span className="source-addon-name">{addonName}</span>
+            </div>
+            <button
+              className="btn btn-primary btn-sm source-play-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectStream(streamUrl);
+              }}
+            >
+              <Play size={12} /> Play
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        key={key}
+        className="source-card"
+        onClick={() => onSelectStream(streamUrl)}
+      >
+        <div className="source-card-left">
+          <div className="source-quality-col">
+            <span
+              className={`source-res-badge ${info.resolutionBadge === "4K" ? "res-4k" : info.resolutionBadge === "1080p" ? "res-1080p" : "res-other"}`}
+            >
+              {info.resolutionBadge}
+            </span>
+          </div>
+          <div className="source-details-col">
+            <span className="source-stream-title">
+              {streamTitle || description || "Stream"}
+            </span>
+            <div className="source-badges">
+              {info.hasDolbyVision && <DolbyVisionBadge height={16} />}
+              {info.hasHDR10Plus && <HDR10PlusBadge height={16} />}
+              {info.isHDR &&
+                !info.hasDolbyVision &&
+                !info.hasHDR10Plus &&
+                (info.hdrType === "HDR10" ? (
+                  <HDR10Badge height={16} />
+                ) : (
+                  <HDRBadge height={16} />
+                ))}
+              {info.hasAtmos && <DolbyAtmosBadge height={16} />}
+            </div>
+          </div>
+        </div>
+        <div className="source-card-right">
+          <div className="source-addon-info">
+            {addonLogo && (
+              <img
+                src={addonLogo}
+                alt=""
+                className="source-addon-logo"
+              />
+            )}
+            <span className="source-addon-name">{addonName}</span>
+          </div>
+          <button
+            className="btn btn-primary btn-sm source-play-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectStream(streamUrl);
+            }}
+          >
+            <Play size={12} /> Play
+          </button>
+        </div>
+      </div>
+    );
+  };
 
   // Build a flat, potentially sorted list of stream cards
   const renderStreams = () => {
@@ -45,68 +192,22 @@ export function SourceSelectPopup({
       const sorted = sortStreamsByQuality(streams);
       return sorted.map((item, i) => {
         const streamTitle = item.stream.name ?? item.stream.title ?? "";
-        const info = parseStreamInfo(streamTitle, item.stream.description);
+        const allText = [item.stream.name, item.stream.title, item.stream.description].filter(Boolean).join(" ");
+        const info = parseStreamInfo(streamTitle, allText);
         const streamUrl =
           item.stream.url ??
           (item.stream.infoHash
             ? `magnet:?xt=urn:btih:${item.stream.infoHash}`
             : null);
         if (!streamUrl) return null;
-        return (
-          <div
-            key={`sorted-${i}`}
-            className="source-card"
-            onClick={() => onSelectStream(streamUrl)}
-          >
-            <div className="source-card-left">
-              <div className="source-quality-col">
-                <span
-                  className={`source-res-badge ${info.resolutionBadge === "4K" ? "res-4k" : info.resolutionBadge === "1080p" ? "res-1080p" : "res-other"}`}
-                >
-                  {info.resolutionBadge}
-                </span>
-              </div>
-              <div className="source-details-col">
-                <span className="source-stream-title">
-                  {streamTitle || item.stream.description || "Stream"}
-                </span>
-                <div className="source-badges">
-                  {info.hasDolbyVision && <DolbyVisionBadge height={16} />}
-                  {info.hasHDR10Plus && <HDR10PlusBadge height={16} />}
-                  {info.isHDR &&
-                    !info.hasDolbyVision &&
-                    !info.hasHDR10Plus &&
-                    (info.hdrType === "HDR10" ? (
-                      <HDR10Badge height={16} />
-                    ) : (
-                      <HDRBadge height={16} />
-                    ))}
-                  {info.hasAtmos && <DolbyAtmosBadge height={16} />}
-                </div>
-              </div>
-            </div>
-            <div className="source-card-right">
-              <div className="source-addon-info">
-                {item.addonLogo && (
-                  <img
-                    src={item.addonLogo}
-                    alt=""
-                    className="source-addon-logo"
-                  />
-                )}
-                <span className="source-addon-name">{item.addonName}</span>
-              </div>
-              <button
-                className="btn btn-primary btn-sm source-play-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectStream(streamUrl);
-                }}
-              >
-                <Play size={12} /> Play
-              </button>
-            </div>
-          </div>
+        return renderCard(
+          `sorted-${i}`,
+          streamTitle,
+          item.stream.description,
+          info,
+          streamUrl,
+          item.addonName,
+          item.addonLogo,
         );
       });
     }
@@ -115,70 +216,22 @@ export function SourceSelectPopup({
     return streams.flatMap((addonResult) =>
       addonResult.streams.map((stream, si) => {
         const streamTitle = stream.name ?? stream.title ?? "";
-        const info = parseStreamInfo(streamTitle, stream.description);
+        const allText = [stream.name, stream.title, stream.description].filter(Boolean).join(" ");
+        const info = parseStreamInfo(streamTitle, allText);
         const streamUrl =
           stream.url ??
           (stream.infoHash
             ? `magnet:?xt=urn:btih:${stream.infoHash}`
             : null);
         if (!streamUrl) return null;
-        return (
-          <div
-            key={`${addonResult.addonId}-${si}`}
-            className="source-card"
-            onClick={() => onSelectStream(streamUrl)}
-          >
-            <div className="source-card-left">
-              <div className="source-quality-col">
-                <span
-                  className={`source-res-badge ${info.resolutionBadge === "4K" ? "res-4k" : info.resolutionBadge === "1080p" ? "res-1080p" : "res-other"}`}
-                >
-                  {info.resolutionBadge}
-                </span>
-              </div>
-              <div className="source-details-col">
-                <span className="source-stream-title">
-                  {streamTitle || stream.description || "Stream"}
-                </span>
-                <div className="source-badges">
-                  {info.hasDolbyVision && <DolbyVisionBadge height={16} />}
-                  {info.hasHDR10Plus && <HDR10PlusBadge height={16} />}
-                  {info.isHDR &&
-                    !info.hasDolbyVision &&
-                    !info.hasHDR10Plus &&
-                    (info.hdrType === "HDR10" ? (
-                      <HDR10Badge height={16} />
-                    ) : (
-                      <HDRBadge height={16} />
-                    ))}
-                  {info.hasAtmos && <DolbyAtmosBadge height={16} />}
-                </div>
-              </div>
-            </div>
-            <div className="source-card-right">
-              <div className="source-addon-info">
-                {addonResult.addonLogo && (
-                  <img
-                    src={addonResult.addonLogo}
-                    alt=""
-                    className="source-addon-logo"
-                  />
-                )}
-                <span className="source-addon-name">
-                  {addonResult.addonName}
-                </span>
-              </div>
-              <button
-                className="btn btn-primary btn-sm source-play-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectStream(streamUrl);
-                }}
-              >
-                <Play size={12} /> Play
-              </button>
-            </div>
-          </div>
+        return renderCard(
+          `${addonResult.addonId}-${si}`,
+          streamTitle,
+          stream.description,
+          info,
+          streamUrl,
+          addonResult.addonName,
+          addonResult.addonLogo,
         );
       }),
     );
@@ -191,6 +244,7 @@ export function SourceSelectPopup({
           <div>
             <div className="source-popup-title">{title}</div>
             <div className="source-popup-subtitle">
+              {isLoading && <span className="source-loading-dot" />}
               {isLoading
                 ? totalStreams > 0
                   ? `${totalStreams} stream${totalStreams !== 1 ? "s" : ""} found — loading ${pendingAddons.length > 0 ? pendingAddons.join(", ") : "more"}...`

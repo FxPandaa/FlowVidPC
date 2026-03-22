@@ -1,8 +1,8 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuthStore } from "../stores/authStore";
-import { useProfileStore } from "../stores/profileStore";
+import { useProfileStore, STOCK_AVATARS } from "../stores/profileStore";
 import { Settings } from "./Icons";
 import "./Layout.css";
 
@@ -19,12 +19,26 @@ function FrozenOutlet() {
 
 export function Layout() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const avatarPickerRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { isAuthenticated, user, logout } = useAuthStore();
   const activeProfile = useProfileStore(
     (s) => s.profiles.find((p) => p.id === s.activeProfileId) || null,
   );
+
+  // Close avatar picker on outside click
+  useEffect(() => {
+    if (!showAvatarPicker) return;
+    const handler = (e: MouseEvent) => {
+      if (avatarPickerRef.current && !avatarPickerRef.current.contains(e.target as Node)) {
+        setShowAvatarPicker(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showAvatarPicker]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,27 +128,62 @@ export function Layout() {
               <Settings size={18} />
             </NavLink>
 
-            {activeProfile && (
-              <NavLink
-                to="/profiles"
-                className="profile-nav-btn"
-                title={activeProfile.name}
-              >
-                <span
-                  className="profile-nav-avatar"
-                  style={{ background: activeProfile.avatarColor }}
-                >
-                  {activeProfile.avatarIcon}
-                </span>
-              </NavLink>
-            )}
-
             {isAuthenticated ? (
-              <div className="user-menu">
-                <span className="user-name">{user?.username || user?.email}</span>
-                <button onClick={handleLogout} className="logout-btn">
-                  Logout
+              <div className="user-avatar-area" ref={avatarPickerRef}>
+                <button
+                  className="user-avatar-btn"
+                  onClick={() => setShowAvatarPicker((v) => !v)}
+                  title={activeProfile?.name || user?.username || "Account"}
+                >
+                  {activeProfile?.avatarImage ? (
+                    <img
+                      className="user-avatar-img"
+                      src={STOCK_AVATARS.find((a) => a.id === activeProfile.avatarImage)?.url || activeProfile.avatarImage}
+                      alt=""
+                    />
+                  ) : activeProfile ? (
+                    <span
+                      className="user-avatar-emoji"
+                      style={{ background: activeProfile.avatarColor }}
+                    >
+                      {activeProfile.avatarIcon}
+                    </span>
+                  ) : (
+                    <span className="user-avatar-emoji user-avatar-default">
+                      {(user?.username || user?.email || "?")[0].toUpperCase()}
+                    </span>
+                  )}
                 </button>
+
+                {showAvatarPicker && (
+                  <div className="avatar-picker-dropdown">
+                    <div className="avatar-picker-header">
+                      <span className="avatar-picker-label">
+                        {activeProfile?.name || user?.username || "Account"}
+                      </span>
+                    </div>
+                    <div className="avatar-picker-actions">
+                      <button
+                        className="avatar-picker-action"
+                        onClick={() => { setShowAvatarPicker(false); navigate("/profiles"); }}
+                      >
+                        Switch Profile
+                      </button>
+                      <button
+                        className="avatar-picker-action"
+                        onClick={() => { setShowAvatarPicker(false); navigate("/settings"); }}
+                      >
+                        Settings
+                      </button>
+                      <button
+                        className="avatar-picker-action avatar-picker-logout"
+                        onClick={() => { setShowAvatarPicker(false); handleLogout(); }}
+                      >
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <NavLink to="/login" className="header-login-btn">

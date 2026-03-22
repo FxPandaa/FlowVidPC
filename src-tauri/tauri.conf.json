@@ -1,5 +1,4 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
   "productName": "FlowVid",
   "version": "1.0.0",
   "identifier": "com.FlowVid.app",

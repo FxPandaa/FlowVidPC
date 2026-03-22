@@ -55,10 +55,12 @@ interface SettingsState {
   subtitleAppearance: SubtitleAppearance;
   blurUnwatchedEpisodes: boolean;
   streamSorting: StreamSortMode;
+  streamDetailMode: boolean;
   tmdbCustomApiKey: string;
   tmdbUseCustomKey: boolean;
 
   setStreamSorting: (mode: StreamSortMode) => void;
+  setStreamDetailMode: (enabled: boolean) => void;
   setPreferredQuality: (quality: VideoQuality) => void;
   setAutoPlay: (enabled: boolean) => void;
   setAutoPlayNext: (enabled: boolean) => void;
@@ -125,6 +127,7 @@ const defaultSettings = {
   subtitleAppearance: defaultSubtitleAppearance,
   blurUnwatchedEpisodes: true,
   streamSorting: "quality" as StreamSortMode,
+  streamDetailMode: false,
   tmdbCustomApiKey: "",
   tmdbUseCustomKey: false,
   seriesSubtitleSelections: {} as Record<string, SeriesSubtitlePref>,
@@ -177,6 +180,7 @@ export const useSettingsStore = create<SettingsState>()(
 
       setBlurUnwatchedEpisodes: (enabled) => set({ blurUnwatchedEpisodes: enabled }),
       setStreamSorting: (mode) => set({ streamSorting: mode }),
+      setStreamDetailMode: (enabled) => set({ streamDetailMode: enabled }),
       setTmdbCustomApiKey: (key) => set({ tmdbCustomApiKey: key }),
       setTmdbUseCustomKey: (enabled) => set({ tmdbUseCustomKey: enabled }),
       seriesSubtitleSelections: {},

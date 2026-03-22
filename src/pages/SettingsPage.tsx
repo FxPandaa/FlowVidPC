@@ -33,6 +33,7 @@ export function SettingsPage() {
     blurUnwatchedEpisodes,
     showForYou,
     streamSorting,
+    streamDetailMode,
     setAutoPlay,
     setAutoPlayNext,
     setSkipIntro,
@@ -45,6 +46,7 @@ export function SettingsPage() {
     setBlurUnwatchedEpisodes,
     setShowForYou,
     setStreamSorting,
+    setStreamDetailMode,
     preferredAudioLanguage,
     setPreferredAudioLanguage,
     tmdbCustomApiKey,
@@ -217,6 +219,20 @@ export function SettingsPage() {
             <option value="addon">Group by Addon</option>
           </select>
         </div>
+
+        <div className="setting-item">
+          <div className="setting-info">
+            <label>Detailed Stream Info</label>
+            <p>Show full source details including codecs, audio, and languages</p>
+          </div>
+          <button
+            className={`toggle ${streamDetailMode ? "active" : ""}`}
+            onClick={() => setStreamDetailMode(!streamDetailMode)}
+          >
+            <span className="toggle-handle" />
+          </button>
+        </div>
+
         <div className="setting-item">
           <div className="setting-info">
             <label>Preferred Audio Language</label>
@@ -449,14 +465,14 @@ export function SettingsPage() {
                   type="range"
                   min="16"
                   max="36"
-                  value={subtitleAppearance.fontSize}
+                  value={subtitleAppearance.fontSize ?? 28}
                   onChange={(e) =>
                     setSubtitleAppearance({
                       fontSize: parseInt(e.target.value),
                     })
                   }
                 />
-                <span>{subtitleAppearance.fontSize}px</span>
+                <span>{subtitleAppearance.fontSize ?? 28}px</span>
               </div>
             </div>
 
@@ -508,7 +524,7 @@ export function SettingsPage() {
                   type="range"
                   min="0"
                   max="100"
-                  value={Math.round(subtitleAppearance.backgroundOpacity * 100)}
+                  value={Math.round((subtitleAppearance.backgroundOpacity ?? 0.6) * 100)}
                   onChange={(e) =>
                     setSubtitleAppearance({
                       backgroundOpacity: parseInt(e.target.value) / 100,
@@ -516,7 +532,7 @@ export function SettingsPage() {
                   }
                 />
                 <span>
-                  {Math.round(subtitleAppearance.backgroundOpacity * 100)}%
+                  {Math.round((subtitleAppearance.backgroundOpacity ?? 0.6) * 100)}%
                 </span>
               </div>
             </div>
@@ -723,9 +739,11 @@ function SubscriptionSection() {
                 ? subscription?.cancelAtPeriodEnd
                   ? `Cancels on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
                   : `Renews on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
-                : subscription?.trialEligible === false
-                  ? "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more."
-                  : "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more. Try it free for 1 month!"}
+                : isCanceled
+                  ? "Your trial has ended. Subscribe to FlowVid+ to continue enjoying addons, library sync across devices, and more."
+                  : subscription?.trialEligible === false
+                    ? "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more."
+                    : "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more. Try it free for 1 month!"}
             </p>
           </div>
           <div className="subscription-header-actions">
@@ -739,7 +757,7 @@ function SubscriptionSection() {
                 onClick={handleUpgrade}
                 disabled={checkoutLoading}
               >
-                {checkoutLoading ? "Opening…" : subscription?.trialEligible === false ? "Subscribe to Plus" : "Start Free Trial"}
+                {checkoutLoading ? "Opening…" : (isCanceled || subscription?.trialEligible === false) ? "Upgrade to FlowVid+" : "Start Free Trial"}
               </button>
             )}
           </div>
@@ -866,8 +884,8 @@ function DeleteAccountSection() {
     try {
       const token = useAuthStore.getState().token;
       const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
-      const res = await fetch(`${API_URL}/auth/account`, {
-        method: "DELETE",
+      const res = await fetch(`${API_URL}/auth/account/delete`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,

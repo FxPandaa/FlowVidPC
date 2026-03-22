@@ -4,7 +4,7 @@ import {
   useProfileStore,
   Profile,
   MAX_PROFILES,
-  PROFILE_AVATARS,
+  STOCK_AVATARS,
 } from "../stores/profileStore";
 import { Pencil } from "../components/Icons";
 import "./ProfileSelectPage.css";
@@ -24,8 +24,7 @@ export function ProfileSelectPage() {
   );
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [newName, setNewName] = useState("");
-  const [newColor, setNewColor] = useState<string>(PROFILE_AVATARS[0].color);
-  const [newIcon, setNewIcon] = useState<string>(PROFILE_AVATARS[0].icon);
+  const [newAvatarImage, setNewAvatarImage] = useState<string | undefined>(STOCK_AVATARS[0].id);
   const [isKid, setIsKid] = useState(false);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -33,8 +32,7 @@ export function ProfileSelectPage() {
     if (mode === "manage") {
       setEditingProfile(profile);
       setNewName(profile.name);
-      setNewColor(profile.avatarColor);
-      setNewIcon(profile.avatarIcon);
+      setNewAvatarImage(profile.avatarImage || STOCK_AVATARS[0].id);
       setIsKid(profile.isKid);
       setMode("edit");
       return;
@@ -47,7 +45,10 @@ export function ProfileSelectPage() {
   const handleCreateProfile = () => {
     if (!newName.trim()) return;
 
-    const profile = createProfile(newName, newColor, newIcon, isKid);
+    const profile = createProfile(newName, "#6366f1", "👤", isKid);
+    if (profile && newAvatarImage) {
+      updateProfile(profile.id, { avatarImage: newAvatarImage });
+    }
     if (profile) {
       resetForm();
       setMode("select");
@@ -59,8 +60,7 @@ export function ProfileSelectPage() {
 
     updateProfile(editingProfile.id, {
       name: newName,
-      avatarColor: newColor,
-      avatarIcon: newIcon,
+      avatarImage: newAvatarImage,
       isKid,
     });
 
@@ -78,8 +78,7 @@ export function ProfileSelectPage() {
 
   const resetForm = () => {
     setNewName("");
-    setNewColor(PROFILE_AVATARS[0].color);
-    setNewIcon(PROFILE_AVATARS[0].icon);
+    setNewAvatarImage(STOCK_AVATARS[0].id);
     setIsKid(false);
     setEditingProfile(null);
   };
@@ -106,12 +105,11 @@ export function ProfileSelectPage() {
           <div className="profile-form">
             {/* Avatar preview */}
             <div className="profile-form-avatar-preview">
-              <div
-                className="profile-avatar profile-avatar-xl"
-                style={{ background: newColor }}
-              >
-                <span>{newIcon}</span>
-              </div>
+              <img
+                className="profile-avatar profile-avatar-xl profile-avatar-img"
+                src={STOCK_AVATARS.find((a) => a.id === newAvatarImage)?.url || STOCK_AVATARS[0].url}
+                alt=""
+              />
             </div>
 
             {/* Name */}
@@ -127,25 +125,18 @@ export function ProfileSelectPage() {
               />
             </div>
 
-            {/* Avatar selector */}
+            {/* Stock avatar pictures */}
             <div className="profile-form-field">
-              <label>Avatar</label>
-              <div className="avatar-grid">
-                {PROFILE_AVATARS.map((avatar) => (
+              <label>Profile Picture</label>
+              <div className="avatar-image-grid">
+                {STOCK_AVATARS.map((avatar) => (
                   <button
-                    key={`${avatar.color}-${avatar.icon}`}
-                    className={`avatar-option ${
-                      newColor === avatar.color && newIcon === avatar.icon
-                        ? "avatar-option-selected"
-                        : ""
-                    }`}
-                    style={{ background: avatar.color }}
-                    onClick={() => {
-                      setNewColor(avatar.color);
-                      setNewIcon(avatar.icon);
-                    }}
+                    key={avatar.id}
+                    className={`avatar-image-option ${newAvatarImage === avatar.id ? "avatar-image-selected" : ""}`}
+                    title={avatar.label}
+                    onClick={() => setNewAvatarImage(avatar.id)}
                   >
-                    <span>{avatar.icon}</span>
+                    <img src={avatar.url} alt={avatar.label} />
                   </button>
                 ))}
               </div>
@@ -207,9 +198,12 @@ export function ProfileSelectPage() {
               >
                 <div
                   className="profile-avatar"
-                  style={{ background: profile.avatarColor }}
                 >
-                  <span>{profile.avatarIcon}</span>
+                  <img
+                    className="profile-avatar-stock-img"
+                    src={STOCK_AVATARS.find((a) => a.id === profile.avatarImage)?.url || STOCK_AVATARS[0].url}
+                    alt=""
+                  />
                   {mode === "manage" && (
                     <div className="profile-edit-badge">
                       <Pencil size={14} />
