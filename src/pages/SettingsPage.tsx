@@ -22,7 +22,6 @@ const FONT_FAMILIES = [
 
 export function SettingsPage() {
   const navigate = useNavigate();
-  const hasSession = useAuthStore((s) => Boolean(s.token));
   const {
     autoPlay,
     autoPlayNext,
