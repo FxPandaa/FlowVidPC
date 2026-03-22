@@ -54,6 +54,8 @@ export function SettingsPage() {
     setTmdbCustomApiKey,
     setTmdbUseCustomKey,
     clearTmdbCache,
+    hardwareDecoding,
+    setHardwareDecoding,
     resetSettings,
   } = useSettingsStore();
 
@@ -200,6 +202,19 @@ export function SettingsPage() {
               MPV Player (Better codec support)
             </option>
           </select>
+        </div>
+
+        <div className="setting-item">
+          <div className="setting-info">
+            <label>Hardware Accelerated Decoding</label>
+            <p>Use GPU hardware decoding (D3D11VA on Windows). Disable if you experience black screens or playback glitches.</p>
+          </div>
+          <button
+            className={`toggle ${hardwareDecoding ?? true ? "active" : ""}`}
+            onClick={() => setHardwareDecoding(!(hardwareDecoding ?? true))}
+          >
+            <span className="toggle-handle" />
+          </button>
         </div>
 
         <div className="setting-item">
@@ -802,8 +817,33 @@ function SubscriptionSection() {
 // ============================================================================
 
 function AboutSection() {
-  const { checkForUpdates, isChecking, result, error, currentVersion } =
+  const { checkForUpdates: checkApi, isChecking: isCheckingApi, result, error: apiError, currentVersion } =
     useUpdateChecker();
+  const [tauriChecking, setTauriChecking] = useState(false);
+  const [tauriUpdate, setTauriUpdate] = useState<import("@tauri-apps/plugin-updater").Update | null>(null);
+  const [tauriError, setTauriError] = useState<string | null>(null);
+
+  const isChecking = isCheckingApi || tauriChecking;
+
+  const handleCheck = async () => {
+    setTauriError(null);
+    setTauriUpdate(null);
+    // Check via Tauri updater (handles download too)
+    try {
+      setTauriChecking(true);
+      const { check } = await import("@tauri-apps/plugin-updater");
+      const update = await check();
+      if (update?.available) {
+        setTauriUpdate(update);
+      }
+    } catch {
+      // Fall through to API check
+    } finally {
+      setTauriChecking(false);
+    }
+    // Also check the API for version info / notes
+    await checkApi();
+  };
 
   return (
     <>
@@ -814,21 +854,28 @@ function AboutSection() {
         </div>
         <button
           className="btn btn-secondary"
-          onClick={checkForUpdates}
+          onClick={handleCheck}
           disabled={isChecking}
         >
           {isChecking ? "Checking..." : "Check for Updates"}
         </button>
       </div>
 
-      {result && !result.hasUpdate && (
+      {tauriUpdate && (
+        <div className="update-status update-available">
+          <span>Update available: v{tauriUpdate.version}</span>
+          {tauriUpdate.body && <p className="update-notes">{tauriUpdate.body}</p>}
+        </div>
+      )}
+
+      {result && !result.hasUpdate && !tauriUpdate && (
         <div className="update-status update-current">
           <Check size={14} />
           <span>You're up to date!</span>
         </div>
       )}
 
-      {result && result.hasUpdate && (
+      {result && result.hasUpdate && !tauriUpdate && (
         <div
           className={`update-status ${result.forceUpdate ? "update-force" : "update-available"}`}
         >
@@ -851,10 +898,10 @@ function AboutSection() {
         </div>
       )}
 
-      {error && (
+      {(apiError || tauriError) && (
         <div className="update-status update-error">
           <XCircle size={14} />
-          <span>{error}</span>
+          <span>{tauriError || apiError}</span>
         </div>
       )}
     </>

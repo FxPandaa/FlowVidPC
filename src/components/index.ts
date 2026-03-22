@@ -11,3 +11,4 @@ export type { AudioTrack } from "./AudioTrackSelector";
 export { EmbeddedMpvPlayer } from "./EmbeddedMpvPlayer";
 export { PersonModal } from "./PersonModal";
 export { UpgradePrompt } from "./UpgradePrompt";
+export { UpdateModal } from "./UpdateModal";

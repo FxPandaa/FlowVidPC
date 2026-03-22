@@ -36,6 +36,7 @@
     },
     "libmpv:default",
     "updater:default",
+    "process:default",
     "opener:default"
   ]
 }

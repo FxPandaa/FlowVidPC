@@ -1,6 +1,6 @@
 {
   "productName": "FlowVid",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "identifier": "com.FlowVid.app",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -37,16 +37,18 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": ["lib/**/*"],
+    "resources": [
+      "lib/**/*"
+    ],
     "createUpdaterArtifacts": "v1Compatible"
   },
   "plugins": {
     "updater": {
-      "pubkey": "",
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDc2ODY2QzE0Qjk4OUVGOTcKUldTWDc0bTVGR3lHZG8xYktMcHA3VFlBSGlFdGg2N3lXMm4zclBpckkrRk1pYWQxMWRsVmttQVYK",
       "endpoints": [
-        "https://YOUR_DOMAIN/updates/tauri/{{target}}/{{current_version}}"
+        "https://github.com/FxPandaa/FlowVidPC/releases/latest/download/latest.json"
       ],
-      "dialog": true
+      "dialog": false
     }
   }
 }

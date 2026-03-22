@@ -19,6 +19,12 @@ src-tauri/lib/
 .env.*
 !.env.example
 
+# Signing keys
+*.key
+*.key.pub
+~/.tauri/
+.tauri/
+
 # IDE
 .vscode/
 .idea/

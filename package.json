@@ -1,18 +1,20 @@
 {
   "name": "FlowVid-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "FlowVid Desktop - Cross-platform streaming app",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "bump": "node scripts/bump-version.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "~2.9.0",
     "@tauri-apps/plugin-http": "~2.5.6",
     "@tauri-apps/plugin-opener": "^2.5.3",
+    "@tauri-apps/plugin-process": "^2.3.1",
     "@tauri-apps/plugin-store": "~2.4.2",
     "@tauri-apps/plugin-updater": "~2.9.0",
     "axios": "^1.7.9",

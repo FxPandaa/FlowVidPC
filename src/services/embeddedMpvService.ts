@@ -15,6 +15,7 @@ import {
   type MpvConfig,
   type MpvObservableProperty,
 } from "tauri-plugin-libmpv-api";
+import { useSettingsStore } from "../stores/settingsStore";
 
 // Properties we want to observe from MPV with their types
 // Format: [property-name, type, optional 'none' if can be null]
@@ -188,14 +189,16 @@ class EmbeddedMpvService {
       return;
     }
 
+    const hwEnabled = useSettingsStore.getState().hardwareDecoding ?? true;
+
     const mpvConfig: MpvConfig = {
       initialOptions: {
         // Video output - use classic gpu backend for maximum compatibility.
         // Some libmpv builds show black frames with gpu-next in embedded mode.
         vo: "gpu",
-        // Hardware decoding — let MPV pick the best hw decoder (D3D11VA on Windows).
+        // Hardware decoding — respects the user's hardware decoding setting.
         // Falls back to software automatically if unsupported.
-        hwdec: "auto",
+        hwdec: hwEnabled ? "auto" : "no",
         // Expand limited-range (16-235) content to full-range (0-255) before
         // writing to the HWND surface.  The Windows compositor does NOT do
         // this expansion on its own; 'auto' usually means limited output
@@ -887,15 +890,18 @@ class EmbeddedMpvService {
    * Apply the high-quality video profile for best colour & sharpness.
    */
   private async applyHighQualityProfile(): Promise<void> {
+    const hwEnabled = useSettingsStore.getState().hardwareDecoding ?? true;
     for (const [key, value] of Object.entries(HIGH_QUALITY_PROFILE)) {
+      // Override hwdec from the profile with the live user setting
+      const effectiveValue = key === "hwdec" ? (hwEnabled ? "auto" : "no") : value;
       try {
         if (key === "profile") {
-          await command("apply-profile", [value]);
+          await command("apply-profile", [effectiveValue]);
         } else {
-          await setProperty(key, value);
+          await setProperty(key, effectiveValue);
         }
       } catch (err) {
-        console.info(`Skipping unsupported MPV property ${key}=${value}`);
+        console.info(`Skipping unsupported MPV property ${key}=${effectiveValue}`);
       }
     }
     console.log("Applied high-quality MPV video profile");

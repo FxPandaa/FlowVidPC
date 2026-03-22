@@ -22,7 +22,10 @@ import { useLibraryStore } from "./stores/libraryStore";
 import { flushPendingSync } from "./stores/libraryStore";
 import { useAddonStore } from "./stores/addonStore";
 import { useSubscriptionStore } from "./stores/subscriptionStore";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { Update } from "@tauri-apps/plugin-updater";
+import { check } from "@tauri-apps/plugin-updater";
+import { UpdateModal } from "./components";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
@@ -132,9 +135,35 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const [pendingUpdate, setPendingUpdate] = useState<Update | null>(null);
+
+  // Check for updates on startup (silently)
+  useEffect(() => {
+    let cancelled = false;
+    const checkUpdate = async () => {
+      try {
+        const update = await check();
+        if (update?.available && !cancelled) {
+          setPendingUpdate(update);
+        }
+      } catch {
+        // Silently ignore — don't disrupt the app if check fails
+      }
+    };
+    // Small delay so the app loads first
+    const timer = setTimeout(checkUpdate, 3000);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, []);
+
   return (
     <BrowserRouter>
       <AppInitializer>
+        {pendingUpdate && (
+          <UpdateModal
+            update={pendingUpdate}
+            onDismiss={() => setPendingUpdate(null)}
+          />
+        )}
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/profiles" element={<ProfileSelectPage />} />

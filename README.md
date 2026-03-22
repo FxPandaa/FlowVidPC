@@ -6,11 +6,11 @@
 
 <p align="center">
   <strong>Stream everything. One app. No limits.</strong><br />
-  FlowVid for Windows, macOS, and Linux.
+  FlowVid for Windows.
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-blue" alt="Platform" />
+  <img src="https://img.shields.io/badge/platform-Windows-blue" alt="Platform" />
   <img src="https://img.shields.io/badge/license-MIT-green" alt="License" />
 </p>
 

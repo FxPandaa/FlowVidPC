@@ -58,6 +58,7 @@ interface SettingsState {
   streamDetailMode: boolean;
   tmdbCustomApiKey: string;
   tmdbUseCustomKey: boolean;
+  hardwareDecoding: boolean;
 
   setStreamSorting: (mode: StreamSortMode) => void;
   setStreamDetailMode: (enabled: boolean) => void;
@@ -84,6 +85,7 @@ interface SettingsState {
   setTmdbCustomApiKey: (key: string) => void;
   setTmdbUseCustomKey: (enabled: boolean) => void;
   clearTmdbCache: () => void;
+  setHardwareDecoding: (enabled: boolean) => void;
   seriesSubtitleSelections: Record<string, SeriesSubtitlePref>;
   setSeriesSubtitleSelection: (seriesId: string, pref: SeriesSubtitlePref) => void;
   getSeriesSubtitleSelection: (seriesId: string) => SeriesSubtitlePref | null;
@@ -130,6 +132,7 @@ const defaultSettings = {
   streamDetailMode: false,
   tmdbCustomApiKey: "",
   tmdbUseCustomKey: false,
+  hardwareDecoding: true,
   seriesSubtitleSelections: {} as Record<string, SeriesSubtitlePref>,
 };
 
@@ -183,6 +186,7 @@ export const useSettingsStore = create<SettingsState>()(
       setStreamDetailMode: (enabled) => set({ streamDetailMode: enabled }),
       setTmdbCustomApiKey: (key) => set({ tmdbCustomApiKey: key }),
       setTmdbUseCustomKey: (enabled) => set({ tmdbUseCustomKey: enabled }),
+      setHardwareDecoding: (enabled) => set({ hardwareDecoding: enabled }),
       seriesSubtitleSelections: {},
       setSeriesSubtitleSelection: (seriesId, pref) =>
         set((state) => ({
