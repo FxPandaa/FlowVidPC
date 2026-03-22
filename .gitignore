@@ -17,7 +17,6 @@ src-tauri/resources/mpv/*.exe
 # Environment files
 .env
 .env.*
-!.env.example
 
 # Signing keys
 *.key

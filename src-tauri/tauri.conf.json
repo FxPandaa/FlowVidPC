@@ -1,7 +1,7 @@
 {
   "productName": "FlowVid",
   "version": "1.0.1",
-  "identifier": "com.FlowVid.app",
+  "identifier": "com.flowvid.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
@@ -29,7 +29,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["nsis"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -40,7 +40,7 @@
     "resources": [
       "lib/**/*"
     ],
-    "createUpdaterArtifacts": "v1Compatible"
+    "createUpdaterArtifacts": true
   },
   "plugins": {
     "updater": {
