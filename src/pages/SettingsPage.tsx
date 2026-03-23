@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { Check, XCircle } from "../components/Icons";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { platformFetch } from "../utils/platform";
+import { clearUserScopedState } from "../stores/sessionCleanup";
 import "./SettingsPage.css";
 
 // Font options for subtitles
@@ -746,19 +747,19 @@ function SubscriptionSection() {
   // Descriptive plan text based on every possible state
   const planDesc = (() => {
     if (isTrialing && cancelAtEnd) {
-      return `Your trial has been canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""}`;
+      return `Your trial has been canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""} You can resubscribe after it ends.`;
     }
     if (isTrialing) {
       return `Your free trial is active until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""}`;
     }
     if (isActive && cancelAtEnd) {
-      return `Your subscription has been canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""}`;
+      return `Your subscription has been canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""} You can resubscribe after it ends.`;
     }
     if (isActive) {
       return `Your subscription renews on ${formatDate(subscription?.currentPeriodEnd ?? null)}.`;
     }
     if (isCanceled && hasAccess) {
-      return `Your plan was canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""}`;
+      return `Your plan was canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""} You can resubscribe after it ends.`;
     }
     if (isPastDue && hasAccess) {
       return `Your payment is past due. You have access until ${formatDate(subscription?.currentPeriodEnd ?? null)} — please update your payment method.`;
@@ -993,17 +994,42 @@ function AboutSection() {
 
 function DeleteAccountSection() {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showFinalConfirm, setShowFinalConfirm] = useState(false);
   const [password, setPassword] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const subscription = useSubscriptionStore((s) => s.subscription);
+  const openPortal = useSubscriptionStore((s) => s.openPortal);
+  const hasBlockingSubscription = Boolean(
+    subscription
+      && (subscription.status === "active" || subscription.status === "trialing")
+      && !subscription.cancelAtPeriodEnd,
+  );
 
-  const handleDelete = async () => {
-    if (!password) {
-      setDeleteError("Enter your password to confirm");
+  const handleManageSubscription = async () => {
+    setDeleteError(null);
+    const url = await openPortal();
+    if (url) {
+      await openUrl(url);
+    }
+  };
+
+  const handleBeginFinalConfirm = () => {
+    if (hasBlockingSubscription) {
+      setDeleteError("Cancel your subscription first, then come back and delete the account once it is set to end at period end.");
       return;
     }
 
+    if (!password) {
+      setDeleteError("Enter your password to continue");
+      return;
+    }
+    setDeleteError(null);
+    setShowFinalConfirm(true);
+  };
+
+  const handleDelete = async () => {
     setDeleting(true);
     setDeleteError(null);
 
@@ -1025,14 +1051,16 @@ function DeleteAccountSection() {
         throw new Error(data.error || "Failed to delete account");
       }
 
-      // Clear all local state and redirect to login
+      // Clear user-scoped local state so a recreated account cannot inherit
+      // stale profiles, library items, watch history, or addons.
+      clearUserScopedState();
       useAuthStore.getState().logout();
-      localStorage.clear();
       navigate("/login");
     } catch (err) {
       setDeleteError(err instanceof Error ? err.message : "Failed to delete account");
     } finally {
       setDeleting(false);
+      setShowFinalConfirm(false);
     }
   };
 
@@ -1058,12 +1086,25 @@ function DeleteAccountSection() {
       <div className="delete-account-warning">
         <strong>⚠️ This action is permanent and cannot be undone.</strong>
         <p>
-          Your library, watch history, profiles, addons, and all account data
-          will be permanently deleted. If you have an active subscription it will
-          remain active until the end of your billing period — manage it through
-          the subscription portal before deleting.
+          Your FlowVid account, profiles, library, watch history, progress, addons,
+          and synced account data will be permanently deleted.
         </p>
       </div>
+
+      {hasBlockingSubscription && (
+        <div className="delete-account-warning delete-account-warning-blocking">
+          <strong>Cancel your plan before deleting this account.</strong>
+          <p>
+            You still have an active subscription that is not set to cancel. Cancel it first so you do not lose access to managing your billing after the account is deleted.
+          </p>
+          <div className="delete-account-blocking-actions">
+            <button className="btn btn-secondary" onClick={handleManageSubscription} disabled={deleting}>
+              Manage Subscription
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="delete-account-form">
         <input
           type="password"
@@ -1079,20 +1120,46 @@ function DeleteAccountSection() {
         <div className="delete-account-actions">
           <button
             className="btn btn-ghost"
-            onClick={() => { setShowConfirm(false); setPassword(""); setDeleteError(null); }}
+            onClick={() => { setShowConfirm(false); setShowFinalConfirm(false); setPassword(""); setDeleteError(null); }}
             disabled={deleting}
           >
             Cancel
           </button>
           <button
             className="btn btn-danger"
-            onClick={handleDelete}
-            disabled={deleting || !password}
+            onClick={handleBeginFinalConfirm}
+            disabled={deleting || !password || hasBlockingSubscription}
           >
-            {deleting ? "Deleting..." : "Permanently Delete Account"}
+            Continue
           </button>
         </div>
       </div>
+
+      {showFinalConfirm && (
+        <div className="delete-account-modal-overlay" onClick={() => !deleting && setShowFinalConfirm(false)}>
+          <div className="delete-account-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Final Warning</h3>
+            <p className="delete-account-modal-lead">
+              You are about to permanently delete this FlowVid account.
+            </p>
+            <ul className="delete-account-list">
+              <li>Your profiles, library, watch history, playback progress, and addons will be deleted.</li>
+              <li>Your synced account data will be removed from FlowVid and this device will be signed out.</li>
+              <li>You will not be able to restore this account after deletion.</li>
+              <li>If you want FlowVid+ again later, you will need to create a new account and subscribe again.</li>
+            </ul>
+            {deleteError && <div className="form-error">{deleteError}</div>}
+            <div className="delete-account-modal-actions">
+              <button className="btn btn-ghost" onClick={() => setShowFinalConfirm(false)} disabled={deleting}>
+                Go Back
+              </button>
+              <button className="btn btn-danger" onClick={handleDelete} disabled={deleting}>
+                {deleting ? "Deleting..." : "Yes, Delete Everything"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

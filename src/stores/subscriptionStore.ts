@@ -42,6 +42,7 @@ interface SubscriptionState {
   startCheckout: () => Promise<string | null>;
   openPortal: () => Promise<string | null>;
   clearError: () => void;
+  clearState: () => void;
 }
 
 function authHeaders(): Record<string, string> {
@@ -109,7 +110,7 @@ export const useSubscriptionStore = create<SubscriptionState>()((set) => ({
           throw new Error("Please verify your email address before subscribing.");
         }
         if (data.code === "ALREADY_SUBSCRIBED") {
-          throw new Error("You already have an active subscription.");
+          throw new Error(data.error || "You already have an active subscription.");
         }
         throw new Error(data.error || "Failed to start checkout");
       }
@@ -153,4 +154,10 @@ export const useSubscriptionStore = create<SubscriptionState>()((set) => ({
   },
 
   clearError: () => set({ error: null }),
+  clearState: () => set({
+    subscription: null,
+    isLoading: false,
+    checkoutLoading: false,
+    error: null,
+  }),
 }));

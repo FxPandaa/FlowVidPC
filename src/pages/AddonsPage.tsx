@@ -14,6 +14,7 @@ export function AddonsPage() {
   const [updatingAll, setUpdatingAll] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [addonPendingRemoval, setAddonPendingRemoval] = useState<{ id: string; name: string } | null>(null);
 
   // Drag-to-reorder state
   const dragIdxRef = useRef<number | null>(null);
@@ -86,6 +87,12 @@ export function AddonsPage() {
     setUpdatingId(addonId);
     await refreshManifest(addonId);
     setUpdatingId(null);
+  };
+
+  const handleConfirmRemoveAddon = () => {
+    if (!addonPendingRemoval) return;
+    removeAddon(addonPendingRemoval.id);
+    setAddonPendingRemoval(null);
   };
 
   return (
@@ -235,9 +242,7 @@ export function AddonsPage() {
                   <button
                     className="addon-remove-btn"
                     onClick={() => {
-                      if (confirm(`Remove "${addon.manifest.name}"?`)) {
-                        removeAddon(addon.id);
-                      }
+                      setAddonPendingRemoval({ id: addon.id, name: addon.manifest.name });
                     }}
                     title="Remove addon"
                   >
@@ -257,6 +262,28 @@ export function AddonsPage() {
       )}
 
       {isLoading && <div className="addons-loading">Syncing…</div>}
+
+      {addonPendingRemoval && (
+        <div className="addons-confirm-overlay" onClick={() => setAddonPendingRemoval(null)}>
+          <div className="addons-confirm-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Remove Addon</h3>
+            <p>
+              Remove <strong>{addonPendingRemoval.name}</strong> from this account?
+            </p>
+            <p className="addons-confirm-note">
+              This removes the addon from your installed list and it will stop being used for streams.
+            </p>
+            <div className="addons-confirm-actions">
+              <button className="btn btn-ghost" onClick={() => setAddonPendingRemoval(null)}>
+                Cancel
+              </button>
+              <button className="btn btn-danger" onClick={handleConfirmRemoveAddon}>
+                Remove Addon
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

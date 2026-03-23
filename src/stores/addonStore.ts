@@ -62,6 +62,7 @@ interface AddonState {
   loadFromServer: () => Promise<void>;
 
   clearError: () => void;
+  clearAll: () => void;
 }
 
 function getAuthHeaders(): Record<string, string> {
@@ -332,6 +333,7 @@ export const useAddonStore = create<AddonState>()(
       },
 
       clearError: () => set({ error: null }),
+      clearAll: () => set({ addons: [], isLoading: false, error: null }),
     }),
     {
       name: "FlowVid-addons",

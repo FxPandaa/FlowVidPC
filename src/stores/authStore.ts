@@ -2,6 +2,14 @@ import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import { platformFetch } from "../utils/platform";
 
+function clearUserScopedStateAsync(): void {
+  void import("./sessionCleanup")
+    .then(({ clearUserScopedState }) => {
+      clearUserScopedState();
+    })
+    .catch(() => {});
+}
+
 interface User {
   id: string;
   email: string;
@@ -177,6 +185,8 @@ export const useAuthStore = create<AuthState>()(
           isAuthenticated: false,
           error: null,
         });
+
+        clearUserScopedStateAsync();
       },
 
       verifyEmail: async (code: string) => {

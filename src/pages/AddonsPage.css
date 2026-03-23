@@ -78,6 +78,26 @@
   opacity: 0.85;
 }
 
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, opacity 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+}
+
+.btn-danger:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .addons-error {
   margin: 10px 0 0;
   font-size: 0.88rem;
@@ -135,6 +155,51 @@
   font-size: 0.88rem;
   color: var(--text-secondary, rgba(255, 255, 255, 0.45));
   margin: 0;
+}
+
+.addons-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 1000;
+}
+
+.addons-confirm-modal {
+  width: min(100%, 460px);
+  background: rgba(16, 18, 23, 0.98);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+}
+
+.addons-confirm-modal h3 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+  color: var(--text-primary, #fff);
+}
+
+.addons-confirm-modal p {
+  margin: 0;
+  color: var(--text-secondary, rgba(255, 255, 255, 0.65));
+  line-height: 1.55;
+}
+
+.addons-confirm-note {
+  margin-top: 10px !important;
+  font-size: 0.9rem;
+}
+
+.addons-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
 }
 
 /* Addon list */

@@ -146,6 +146,7 @@ interface LibraryState {
   syncWithServer: () => Promise<void>;
   loadFromServer: () => Promise<void>;
   backfillMissingMetadata: () => Promise<void>;
+  clearAll: () => void;
 }
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
@@ -738,6 +739,21 @@ export const useLibraryStore = create<LibraryState>()(
           // Sync the fixed data to the server
           debouncedSync(() => get().syncWithServer());
         }
+      },
+
+      clearAll: () => {
+        set({
+          library: [],
+          watchHistory: [],
+          isLoading: false,
+          isSyncing: false,
+          lastSyncAt: null,
+          activeFilter: "all",
+          sortBy: "recent",
+          searchQuery: "",
+          profileData: {},
+          currentProfileId: null,
+        });
       },
     }),
     {
