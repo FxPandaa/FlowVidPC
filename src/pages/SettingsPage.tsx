@@ -694,10 +694,21 @@ function SubscriptionSection() {
     return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  const isActive = subscription?.status === "active" || subscription?.status === "trialing";
-  const isTrialing = subscription?.status === "trialing";
-  const isCanceled = subscription?.status === "canceled";
-  const isPastDue = subscription?.status === "past_due";
+  const status = subscription?.status;
+  const isActive = status === "active" || status === "trialing";
+  const isTrialing = status === "trialing";
+  const isCanceled = status === "canceled";
+  const isPastDue = status === "past_due";
+  const hasAccess = subscription?.hasAccess ?? false;
+  const cancelAtEnd = subscription?.cancelAtPeriodEnd ?? false;
+
+  // Compute days remaining until period end
+  const daysRemaining = (() => {
+    if (!subscription?.currentPeriodEnd) return null;
+    const diff = new Date(subscription.currentPeriodEnd).getTime() - Date.now();
+    if (diff <= 0) return 0;
+    return Math.ceil(diff / (1000 * 60 * 60 * 24));
+  })();
 
   const handleUpgrade = async () => {
     if (!hasSession) {
@@ -732,6 +743,63 @@ function SubscriptionSection() {
     });
   };
 
+  // Descriptive plan text based on every possible state
+  const planDesc = (() => {
+    if (isTrialing && cancelAtEnd) {
+      return `Your trial has been canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""}`;
+    }
+    if (isTrialing) {
+      return `Your free trial is active until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""}`;
+    }
+    if (isActive && cancelAtEnd) {
+      return `Your subscription has been canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""}`;
+    }
+    if (isActive) {
+      return `Your subscription renews on ${formatDate(subscription?.currentPeriodEnd ?? null)}.`;
+    }
+    if (isCanceled && hasAccess) {
+      return `Your plan was canceled but you still have access until ${formatDate(subscription?.currentPeriodEnd ?? null)}.${daysRemaining !== null ? ` ${daysRemaining} day${daysRemaining !== 1 ? "s" : ""} remaining.` : ""}`;
+    }
+    if (isPastDue && hasAccess) {
+      return `Your payment is past due. You have access until ${formatDate(subscription?.currentPeriodEnd ?? null)} — please update your payment method.`;
+    }
+    if (isCanceled || status === "expired") {
+      return "Your subscription has ended. Upgrade to FlowVid+ to continue enjoying addons, library sync, and more.";
+    }
+    if (isPastDue) {
+      return "Your payment failed. Please update your payment method to restore access.";
+    }
+    if (subscription?.trialEligible === false) {
+      return "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more.";
+    }
+    return "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more. Try it free for 1 month!";
+  })();
+
+  // Which badge to show
+  const badgeElement = (() => {
+    if (isTrialing && cancelAtEnd) return <span className="tier-badge tier-canceling">CANCELING</span>;
+    if (isTrialing) return <span className="tier-badge tier-trial">TRIAL</span>;
+    if (isActive && cancelAtEnd) return <span className="tier-badge tier-canceling">CANCELING</span>;
+    if (isActive) return <span className="tier-badge tier-plus">PRO</span>;
+    if (isCanceled && hasAccess) return <span className="tier-badge tier-canceling">CANCELING</span>;
+    if (isCanceled) return <span className="tier-badge tier-canceled">ENDED</span>;
+    if (isPastDue) return <span className="tier-badge tier-pastdue">PAST DUE</span>;
+    if (status === "expired") return <span className="tier-badge tier-canceled">EXPIRED</span>;
+    return <span className="tier-badge tier-free">FREE</span>;
+  })();
+
+  // Status indicator text + class
+  const statusIndicator = (() => {
+    if (hasAccess && cancelAtEnd) return { text: "Canceling", cls: "indicator-canceling" };
+    if (isTrialing) return { text: "Trial", cls: "indicator-trial" };
+    if (isActive) return { text: "Active", cls: "indicator-active" };
+    if (isCanceled && hasAccess) return { text: "Canceling", cls: "indicator-canceling" };
+    if (isPastDue && hasAccess) return { text: "Past Due", cls: "indicator-pastdue" };
+    if (isCanceled || status === "expired") return { text: "Ended", cls: "indicator-ended" };
+    if (isPastDue) return { text: "Past Due", cls: "indicator-pastdue" };
+    return { text: "Free", cls: "indicator-free" };
+  })();
+
   if (isLoading && !subscription) {
     return <p className="section-description">Loading subscription status…</p>;
   }
@@ -745,35 +813,19 @@ function SubscriptionSection() {
         </div>
       )}
 
-      <div className={`subscription-card ${isActive ? "subscription-card--active" : ""} ${isTrialing ? "subscription-card--trial" : ""}`}>
+      <div className={`subscription-card ${hasAccess ? "subscription-card--active" : ""} ${isTrialing ? "subscription-card--trial" : ""} ${cancelAtEnd || (isCanceled && hasAccess) ? "subscription-card--canceling" : ""}`}>
         <div className="subscription-header">
           <div className="subscription-plan-info">
             <div className="tier-display">
               <span className="subscription-plan-name">
-                {isActive ? "FlowVid Plus" : "FlowVid Free"}
+                {hasAccess ? "FlowVid Plus" : "FlowVid Free"}
               </span>
-              {isTrialing && <span className="tier-badge tier-trial">TRIAL</span>}
-              {subscription?.status === "active" && !isTrialing && <span className="tier-badge tier-plus">PRO</span>}
-              {isCanceled && <span className="tier-badge tier-canceled">CANCELED</span>}
-              {isPastDue && <span className="tier-badge tier-pastdue">PAST DUE</span>}
-              {!isActive && !isCanceled && !isPastDue && <span className="tier-badge tier-free">FREE</span>}
+              {badgeElement}
             </div>
-            <p className="subscription-plan-desc">
-              {isTrialing
-                ? `Your free trial is active until ${formatDate(subscription?.currentPeriodEnd ?? null)}.`
-                : isActive
-                ? subscription?.cancelAtPeriodEnd
-                  ? `Cancels on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
-                  : `Renews on ${formatDate(subscription?.currentPeriodEnd ?? null)}`
-                : isCanceled
-                  ? "Your trial has ended. Subscribe to FlowVid+ to continue enjoying addons, library sync across devices, and more."
-                  : subscription?.trialEligible === false
-                    ? "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more."
-                    : "You're on the free plan. Upgrade to FlowVid+ to install addons, save to your library, sync across devices, and more. Try it free for 1 month!"}
-            </p>
+            <p className="subscription-plan-desc">{planDesc}</p>
           </div>
           <div className="subscription-header-actions">
-            {isActive ? (
+            {hasAccess ? (
               <button className="btn btn-secondary" onClick={handlePortal}>
                 Manage
               </button>
@@ -783,29 +835,45 @@ function SubscriptionSection() {
                 onClick={handleUpgrade}
                 disabled={checkoutLoading}
               >
-                {checkoutLoading ? "Opening…" : (isCanceled || subscription?.trialEligible === false) ? "Upgrade to FlowVid+" : "Start Free Trial"}
+                {checkoutLoading ? "Opening…" : (isCanceled || status === "expired" || subscription?.trialEligible === false) ? "Upgrade to FlowVid+" : "Start Free Trial"}
               </button>
             )}
           </div>
         </div>
 
-        {isActive && (
+        {(hasAccess || isCanceled || isPastDue || status === "expired") && subscription && (
           <div className="subscription-details">
             <div className="subscription-detail-item">
               <span className="subscription-label">Status</span>
-              <span className={`subscription-status-indicator ${isTrialing ? "indicator-trial" : "indicator-active"}`}>
+              <span className={`subscription-status-indicator ${statusIndicator.cls}`}>
                 <span className="status-dot" />
-                {isTrialing ? "Trial" : "Active"}
+                {statusIndicator.text}
               </span>
             </div>
             <div className="subscription-detail-item">
               <span className="subscription-label">Plan</span>
-              <span className="subscription-value">{subscription?.plan === "standard" ? "Standard" : subscription?.plan ?? "Standard"}</span>
+              <span className="subscription-value">{subscription.plan === "standard" ? "Standard (Monthly)" : subscription.plan ?? "Standard"}</span>
             </div>
+            {subscription.currentPeriodStart && (
+              <div className="subscription-detail-item">
+                <span className="subscription-label">Started</span>
+                <span className="subscription-value">{formatDate(subscription.currentPeriodStart)}</span>
+              </div>
+            )}
             <div className="subscription-detail-item">
-              <span className="subscription-label">{isTrialing ? "Trial ends" : subscription?.cancelAtPeriodEnd ? "Cancels on" : "Next billing"}</span>
-              <span className="subscription-value">{formatDate(subscription?.currentPeriodEnd ?? null)}</span>
+              <span className="subscription-label">
+                {cancelAtEnd || (isCanceled && hasAccess) ? "Access until" : isTrialing ? "Trial ends" : isActive ? "Next billing" : "Ended on"}
+              </span>
+              <span className="subscription-value">{formatDate(subscription.currentPeriodEnd ?? null)}</span>
             </div>
+            {daysRemaining !== null && hasAccess && (
+              <div className="subscription-detail-item">
+                <span className="subscription-label">Remaining</span>
+                <span className={`subscription-value ${daysRemaining <= 3 ? "text-warning" : ""}`}>
+                  {daysRemaining} day{daysRemaining !== 1 ? "s" : ""}
+                </span>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -22,6 +22,7 @@ import {
 } from "../components";
 import { parseStreamInfo } from "../utils/streamParser";
 import { embeddedMpvService } from "../services/embeddedMpvService";
+import { useFeatureGate } from "../hooks/useFeatureGate";
 import {
   AlertTriangle,
   ArrowLeft,
@@ -47,6 +48,17 @@ export function PlayerPage() {
   const { type, id, season, episode } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const { canWatch } = useFeatureGate();
+
+  // Redirect to details page if user has no access
+  useEffect(() => {
+    if (!canWatch) {
+      const detailsUrl = type === "movie"
+        ? `/details/movie/${id}`
+        : `/details/series/${id}`;
+      navigate(detailsUrl, { replace: true });
+    }
+  }, [canWatch, type, id, navigate]);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const trackRef = useRef<HTMLTrackElement>(null);

@@ -33,6 +33,31 @@ const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
 function ProfileGuard({ children }: { children: React.ReactNode }) {
   const { profiles, activeProfileId } = useProfileStore();
 
+  // Wait for both persisted stores to rehydrate from localStorage before
+  // making any routing decisions. Without this, the first render sees empty
+  // initial state and briefly shows the home page before redirecting to the
+  // profile picker — causing the visible flicker.
+  const [hydrated, setHydrated] = useState(
+    () => useAuthStore.persist.hasHydrated() && useProfileStore.persist.hasHydrated(),
+  );
+
+  useEffect(() => {
+    if (hydrated) return;
+    let done = false;
+    const finish = () => {
+      if (!done && useAuthStore.persist.hasHydrated() && useProfileStore.persist.hasHydrated()) {
+        done = true;
+        setHydrated(true);
+      }
+    };
+    const unsubAuth = useAuthStore.persist.onFinishHydration(finish);
+    const unsubProfiles = useProfileStore.persist.onFinishHydration(finish);
+    finish(); // in case both already hydrated before this effect ran
+    return () => { unsubAuth(); unsubProfiles(); };
+  }, [hydrated]);
+
+  if (!hydrated) return null;
+
   // If there are profiles but none is selected, redirect to profile select
   if (profiles.length > 0 && !activeProfileId) {
     return <Navigate to="/profiles" replace />;

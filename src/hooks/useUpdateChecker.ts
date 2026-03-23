@@ -9,11 +9,11 @@
  * versions and show a store link or force-update notice.
  */
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { platformFetch } from "../utils/platform";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
-const APP_VERSION = import.meta.env.VITE_APP_VERSION || "1.0.0";
+const FALLBACK_VERSION = import.meta.env.VITE_APP_VERSION || "1.0.0";
 
 export interface UpdateCheckResult {
   currentVersion: string;
@@ -28,6 +28,34 @@ export function useUpdateChecker() {
   const [isChecking, setIsChecking] = useState(false);
   const [result, setResult] = useState<UpdateCheckResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentVersion, setCurrentVersion] = useState(FALLBACK_VERSION);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadVersion = async () => {
+      try {
+        const { isTauri } = await import("../utils/platform");
+
+        if (isTauri()) {
+          const { getVersion } = await import("@tauri-apps/api/app");
+          const runtimeVersion = await getVersion();
+
+          if (isMounted && runtimeVersion) {
+            setCurrentVersion(runtimeVersion);
+          }
+        }
+      } catch {
+        // Keep the fallback version when runtime version lookup is unavailable.
+      }
+    };
+
+    void loadVersion();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const checkForUpdates = useCallback(async () => {
     setIsChecking(true);
@@ -39,7 +67,7 @@ export function useUpdateChecker() {
       const platform = detectPlatform();
 
       const response = await platformFetch(
-        `${API_URL}/updates/check?platform=${platform}&version=${APP_VERSION}`,
+        `${API_URL}/updates/check?platform=${platform}&version=${currentVersion}`,
       );
 
       if (!response.ok) {
@@ -48,7 +76,7 @@ export function useUpdateChecker() {
 
       const data = await response.json();
       const updateResult: UpdateCheckResult = {
-        currentVersion: APP_VERSION,
+        currentVersion,
         latestVersion: data.data.latestVersion,
         hasUpdate: data.data.hasUpdate,
         forceUpdate: data.data.forceUpdate,
@@ -66,14 +94,14 @@ export function useUpdateChecker() {
     } finally {
       setIsChecking(false);
     }
-  }, []);
+  }, [currentVersion]);
 
   return {
     checkForUpdates,
     isChecking,
     result,
     error,
-    currentVersion: APP_VERSION,
+    currentVersion,
   };
 }
 

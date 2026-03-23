@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { WatchHistoryItem, useLibraryStore } from "../stores/libraryStore";
+import { getFeatureGate } from "../hooks/useFeatureGate";
 import { useValidatedImage } from "../utils/useValidatedImage";
 import { Film, Tv, Play, X, ChevronLeft, ChevronRight } from "./Icons";
 import "./ContinueWatching.css";
@@ -89,6 +90,15 @@ function ContinueWatchingCard({ item }: { item: WatchHistoryItem }) {
 
   const handleCardClick = (e: React.MouseEvent) => {
     e.preventDefault();
+    const { canWatch } = getFeatureGate();
+    if (!canWatch) {
+      // No access — go to details page where upgrade prompt will show
+      const detailsUrl = item.type === "movie"
+        ? `/details/movie/${item.imdbId}`
+        : `/details/series/${item.imdbId}`;
+      navigate(detailsUrl);
+      return;
+    }
     // Always navigate directly — use last stream URL if available
     navigate(playerUrl, {
       state: item.streamUrl ? { streamUrl: item.streamUrl } : undefined,

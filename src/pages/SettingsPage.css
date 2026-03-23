@@ -413,6 +413,10 @@
   border-color: rgba(245, 158, 11, 0.25);
 }
 
+.subscription-card--canceling {
+  border-color: rgba(251, 191, 36, 0.2);
+}
+
 .subscription-header {
   display: flex;
   justify-content: space-between;
@@ -448,7 +452,8 @@
   padding-top: 14px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   display: flex;
-  gap: 32px;
+  flex-wrap: wrap;
+  gap: 24px 32px;
 }
 
 .subscription-detail-item {
@@ -467,6 +472,14 @@
 
 .indicator-active { color: #22c55e; }
 .indicator-trial { color: #f59e0b; }
+.indicator-canceling { color: #fbbf24; }
+.indicator-pastdue { color: #f97316; }
+.indicator-ended { color: #ef4444; }
+.indicator-free { color: var(--text-tertiary); }
+
+.text-warning {
+  color: #f59e0b !important;
+}
 
 .status-dot {
   width: 7px;
@@ -580,6 +593,12 @@
   background: rgba(249, 115, 22, 0.12);
   color: #f97316;
   border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.tier-badge.tier-canceling {
+  background: rgba(251, 191, 36, 0.12);
+  color: #fbbf24;
+  border: 1px solid rgba(251, 191, 36, 0.2);
 }
 
 /* Feature list */

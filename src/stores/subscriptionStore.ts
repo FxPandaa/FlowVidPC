@@ -29,6 +29,7 @@ export interface SubscriptionInfo {
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
   trialEligible?: boolean;
+  hasAccess: boolean;
 }
 
 interface SubscriptionState {
@@ -71,7 +72,22 @@ export const useSubscriptionStore = create<SubscriptionState>()((set) => ({
         throw new Error("Failed to fetch subscription status");
       }
       const data = await res.json();
-      set({ subscription: data.data, isLoading: false });
+      const sub = data.data as SubscriptionInfo;
+
+      // Compute hasAccess locally for resilience — even if the API
+      // doesn't return it yet, we mirror the server logic so the
+      // client always has an accurate access flag.
+      if (sub) {
+        const isActiveStatus = sub.status === "active" || sub.status === "trialing";
+        const periodEnd = sub.currentPeriodEnd ? new Date(sub.currentPeriodEnd) : null;
+        const periodStillValid = periodEnd ? periodEnd > new Date() : false;
+        sub.hasAccess = isActiveStatus
+          || (sub.cancelAtPeriodEnd && periodStillValid)
+          || (sub.status === "canceled" && periodStillValid)
+          || (sub.status === "past_due" && periodStillValid);
+      }
+
+      set({ subscription: sub, isLoading: false });
     } catch (err) {
       set({
         isLoading: false,
