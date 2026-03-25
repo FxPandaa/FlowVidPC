@@ -94,6 +94,11 @@ interface CatalogResponse {
   metas: CinemetaRawMeta[];
 }
 
+/** Rewrite live.metahub.space → images.metahub.space (stable CDN). */
+function fixMetahubUrl(url: string | undefined): string | undefined {
+  return url?.replace('://live.metahub.space/', '://images.metahub.space/');
+}
+
 // Normalize raw cinemeta data to our MediaItem format
 function normalizeMediaItem(raw: CinemetaRawMeta): MediaItem {
   // Parse year from releaseInfo (e.g. "2019", "2019-2023", "2019-") when year is missing
@@ -106,10 +111,13 @@ function normalizeMediaItem(raw: CinemetaRawMeta): MediaItem {
   return {
     ...raw,
     year,
+    poster: fixMetahubUrl(raw.poster),
+    background: fixMetahubUrl(raw.background),
+    logo: fixMetahubUrl(raw.logo),
     imdbId: raw.id,
     title: raw.name,
     overview: raw.description,
-    backdrop: raw.background,
+    backdrop: fixMetahubUrl(raw.background),
     rating: raw.imdbRating ? parseFloat(raw.imdbRating) : 0,
   };
 }
@@ -151,7 +159,8 @@ function normalizeEpisode(raw: CinemetaRawEpisode): Episode {
     title: episodeName,
     name: episodeName,
     episodeNumber: raw.episode,
-    still: raw.thumbnail,
+    thumbnail: fixMetahubUrl(raw.thumbnail),
+    still: fixMetahubUrl(raw.thumbnail),
   };
 }
 

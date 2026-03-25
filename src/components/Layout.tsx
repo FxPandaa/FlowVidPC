@@ -1,32 +1,52 @@
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
-import { useState, useRef, useEffect } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react";
+import { motion } from "framer-motion";
 import { useAuthStore } from "../stores/authStore";
 import { useProfileStore, STOCK_AVATARS } from "../stores/profileStore";
-import { Settings } from "./Icons";
+import { useWatchPartyStore } from "../stores/watchPartyStore";
+import { Settings, Users } from "./Icons";
+import { FriendsActivityPanel } from "./FriendsActivityPanel";
 import "./Layout.css";
-
-/**
- * Freezes the outlet element at mount time so AnimatePresence
- * can keep showing the OLD page content during the exit animation
- * even after the route has already changed.
- */
-function FrozenOutlet() {
-  const outlet = Outlet({});
-  const [frozen] = useState(outlet);
-  return frozen;
-}
 
 export function Layout() {
   const [searchQuery, setSearchQuery] = useState("");
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  const [showFriendsPanel, setShowFriendsPanel] = useState(false);
   const avatarPickerRef = useRef<HTMLDivElement>(null);
+  const friendsPanelRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
   const location = useLocation();
+  const navLinksRef = useRef<HTMLDivElement>(null);
+  const [indicatorX, setIndicatorX] = useState<number | null>(null);
   const { isAuthenticated, user, logout } = useAuthStore();
   const activeProfile = useProfileStore(
     (s) => s.profiles.find((p) => p.id === s.activeProfileId) || null,
   );
+  const friendRequestCount = useWatchPartyStore((s) => s.friendRequests.length);
+  const partyInviteCount = useWatchPartyStore((s) => s.partyInvites.length);
+  const notificationCount = friendRequestCount + partyInviteCount;
+
+  const NAV_ITEMS = [
+    { to: "/", label: "Home", match: (p: string) => p === "/" },
+    { to: "/discover", label: "Discover", match: (p: string) => p.startsWith("/discover") },
+    { to: "/library", label: "Library", match: (p: string) => p.startsWith("/library") },
+    { to: "/calendar", label: "Calendar", match: (p: string) => p.startsWith("/calendar") },
+  ];
+
+  // Measure active tab and update indicator position
+  const updateIndicator = useCallback(() => {
+    const container = navLinksRef.current;
+    if (!container) return;
+    const activeEl = container.querySelector(".nav-link.active") as HTMLElement;
+    if (!activeEl) { setIndicatorX(null); return; }
+    const containerRect = container.getBoundingClientRect();
+    const activeRect = activeEl.getBoundingClientRect();
+    setIndicatorX(activeRect.left - containerRect.left + activeRect.width / 2 - 8);
+  }, []);
+
+  useLayoutEffect(() => {
+    updateIndicator();
+  }, [location.pathname, updateIndicator]);
 
   // Close avatar picker on outside click
   useEffect(() => {
@@ -39,6 +59,18 @@ export function Layout() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [showAvatarPicker]);
+
+  // Close friends panel on outside click
+  useEffect(() => {
+    if (!showFriendsPanel) return;
+    const handler = (e: MouseEvent) => {
+      if (friendsPanelRef.current && !friendsPanelRef.current.contains(e.target as Node)) {
+        setShowFriendsPanel(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showFriendsPanel]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +85,7 @@ export function Layout() {
   };
 
   const isPlayer = location.pathname.startsWith("/player");
+  const isHome = location.pathname === "/";
 
   return (
     <div className={`layout${isPlayer ? " layout--player" : ""}`}>
@@ -78,39 +111,27 @@ export function Layout() {
             <span className="logo-text"><span className="logo-text-flow">Flow</span>Vid</span>
           </NavLink>
 
-          <div className="nav-links">
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                isActive ? "nav-link active" : "nav-link"
-              }
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/discover"
-              className={({ isActive }) =>
-                isActive ? "nav-link active" : "nav-link"
-              }
-            >
-              Discover
-            </NavLink>
-            <NavLink
-              to="/library"
-              className={({ isActive }) =>
-                isActive ? "nav-link active" : "nav-link"
-              }
-            >
-              Library
-            </NavLink>
-            <NavLink
-              to="/calendar"
-              className={({ isActive }) =>
-                isActive ? "nav-link active" : "nav-link"
-              }
-            >
-              Calendar
-            </NavLink>
+          <div className="nav-links" ref={navLinksRef}>
+            {NAV_ITEMS.map((item) => {
+              const active = item.match(location.pathname);
+              return (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className={`nav-link${active ? " active" : ""}`}
+                >
+                  {item.label}
+                </NavLink>
+              );
+            })}
+            {indicatorX !== null && (
+              <motion.div
+                className="nav-indicator"
+                initial={false}
+                animate={{ x: indicatorX }}
+                transition={{ type: "tween", duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+              />
+            )}
           </div>
 
           <form className="search-form" onSubmit={handleSearch}>
@@ -127,6 +148,25 @@ export function Layout() {
             <NavLink to="/settings" className="settings-btn">
               <Settings size={18} />
             </NavLink>
+
+            {isAuthenticated && (
+              <div className="friends-btn-area" ref={friendsPanelRef}>
+                <button
+                  className={`friends-btn${showFriendsPanel ? " active" : ""}`}
+                  onClick={() => setShowFriendsPanel((v) => !v)}
+                  title="Friends"
+                >
+                  <Users size={18} />
+                  {notificationCount > 0 && (
+                    <span className="friends-notification-badge">{notificationCount}</span>
+                  )}
+                </button>
+
+                {showFriendsPanel && (
+                  <FriendsActivityPanel onClose={() => setShowFriendsPanel(false)} />
+                )}
+              </div>
+            )}
 
             {isAuthenticated ? (
               <div className="user-avatar-area" ref={avatarPickerRef}>
@@ -153,6 +193,9 @@ export function Layout() {
                       {(user?.username || user?.email || "?")[0].toUpperCase()}
                     </span>
                   )}
+                  {notificationCount > 0 && (
+                    <span className="avatar-notification-badge">{notificationCount}</span>
+                  )}
                 </button>
 
                 {showAvatarPicker && (
@@ -168,6 +211,12 @@ export function Layout() {
                         onClick={() => { setShowAvatarPicker(false); navigate("/profiles"); }}
                       >
                         Switch Profile
+                      </button>
+                      <button
+                        className="avatar-picker-action"
+                        onClick={() => { setShowAvatarPicker(false); navigate("/friends"); }}
+                      >
+                        Friends
                       </button>
                       <button
                         className="avatar-picker-action"
@@ -194,19 +243,13 @@ export function Layout() {
         </nav>
       </header>
 
-      <main className="main-content">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={location.pathname}
-            className="route-content"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: "easeInOut" }}
-          >
-            <FrozenOutlet />
-          </motion.div>
-        </AnimatePresence>
+      <main className={`main-content${isHome ? " main-content--home" : ""}`}>
+        <div
+          key={location.pathname}
+          className={`route-content${isHome ? " route-content--home" : ""}`}
+        >
+          <Outlet />
+        </div>
       </main>
     </div>
   );

@@ -51,7 +51,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--radius-md);
+  border-radius: 980px;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
@@ -70,7 +70,7 @@
   background: transparent;
   border: none;
   cursor: pointer;
-  border-radius: var(--radius-md);
+  border-radius: 980px;
   transition: background 0.15s ease;
   min-width: 170px;
   text-align: center;
@@ -126,12 +126,12 @@
 }
 
 .calendar-cell.today {
-  background: rgba(var(--accent-rgb, 99, 102, 241), 0.08);
+  background: rgba(0, 229, 255, 0.06);
 }
 
 .calendar-cell.today .cell-day-number {
-  background: var(--accent, #6366f1);
-  color: #fff;
+  background: var(--primary);
+  color: #000;
   border-radius: var(--radius-full);
   width: 26px;
   height: 26px;
@@ -143,15 +143,15 @@
 
 .calendar-cell.selected {
   background: rgba(255, 255, 255, 0.06);
-  box-shadow: inset 0 0 0 2px var(--accent, #6366f1);
+  box-shadow: inset 0 0 0 2px var(--primary);
 }
 
 .calendar-cell.has-episodes {
-  background: rgba(var(--accent-rgb, 99, 102, 241), 0.04);
+  background: rgba(0, 229, 255, 0.03);
 }
 
 .calendar-cell.has-episodes:hover {
-  background: rgba(var(--accent-rgb, 99, 102, 241), 0.08);
+  background: rgba(0, 229, 255, 0.07);
 }
 
 .calendar-cell.past .cell-poster {
@@ -208,8 +208,9 @@
   top: 64px;
   width: 340px;
   height: calc(100vh - 64px);
-  background: rgba(9, 11, 17, 0.97);
-  backdrop-filter: blur(12px);
+  background: rgba(9, 11, 17, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border-left: 1px solid rgba(255, 255, 255, 0.07);
   padding: 24px 20px;
   overflow-y: auto;
@@ -253,7 +254,7 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.06);
   border: none;
-  border-radius: var(--radius-sm);
+  border-radius: 980px;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 14px;
@@ -330,7 +331,7 @@
 .detail-ep-number {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent, #6366f1);
+  color: var(--primary);
 }
 
 .detail-ep-title {
@@ -386,7 +387,7 @@
   width: 32px;
   height: 32px;
   border: 3px solid rgba(255, 255, 255, 0.08);
-  border-top-color: var(--accent, #6366f1);
+  border-top-color: var(--primary);
   border-radius: var(--radius-full);
   animation: cal-spin 0.7s linear infinite;
 }
@@ -521,6 +522,6 @@
 .upcoming-date {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent, #6366f1);
+  color: var(--primary);
   margin-top: 2px;
 }

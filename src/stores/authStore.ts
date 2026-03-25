@@ -15,6 +15,7 @@ interface User {
   email: string;
   username: string;
   emailVerified: boolean;
+  friendCode?: string;
 }
 
 interface AuthState {

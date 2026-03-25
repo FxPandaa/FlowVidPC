@@ -6,7 +6,6 @@
   max-height: 860px;
   margin-bottom: 0;
   overflow: hidden;
-  margin-top: -64px;
   background-color: var(--bg-primary, #06080e);
 }
 
@@ -21,15 +20,37 @@
   background: linear-gradient(
     to top,
     #06080e 0%,
-    #06080e 4%,
-    rgba(6, 8, 14, 0.95) 12%,
-    rgba(6, 8, 14, 0.8) 28%,
-    rgba(6, 8, 14, 0.5) 50%,
-    rgba(6, 8, 14, 0.15) 75%,
+    rgba(6, 8, 14, 0.98) 8%,
+    rgba(6, 8, 14, 0.88) 18%,
+    rgba(6, 8, 14, 0.64) 34%,
+    rgba(6, 8, 14, 0.34) 54%,
+    rgba(6, 8, 14, 0.14) 74%,
+    rgba(6, 8, 14, 0.04) 88%,
     transparent 100%
   );
   pointer-events: none;
   z-index: 3;
+  /* Keep the header zone clear, but fade in much more gradually to avoid a hard band */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 72px,
+    rgba(0, 0, 0, 0.08) 110px,
+    rgba(0, 0, 0, 0.28) 150px,
+    rgba(0, 0, 0, 0.58) 210px,
+    rgba(0, 0, 0, 0.82) 280px,
+    black 360px
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 72px,
+    rgba(0, 0, 0, 0.08) 110px,
+    rgba(0, 0, 0, 0.28) 150px,
+    rgba(0, 0, 0, 0.58) 210px,
+    rgba(0, 0, 0, 0.82) 280px,
+    black 360px
+  );
 }
 
 .hero-backdrop {
@@ -61,25 +82,60 @@
   background:
     linear-gradient(
       to right,
-      rgba(6, 8, 14, 0.9) 0%,
-      rgba(6, 8, 14, 0.6) 20%,
-      rgba(6, 8, 14, 0.2) 40%,
-      transparent 65%
+      rgba(6, 8, 14, 0.72) 0%,
+      rgba(6, 8, 14, 0.48) 18%,
+      rgba(6, 8, 14, 0.22) 36%,
+      rgba(6, 8, 14, 0.08) 52%,
+      transparent 68%
     ),
     linear-gradient(
       to left,
-      rgba(6, 8, 14, 0.5) 0%,
-      rgba(6, 8, 14, 0.2) 5%,
-      transparent 15%
+      rgba(6, 8, 14, 0.28) 0%,
+      rgba(6, 8, 14, 0.14) 6%,
+      rgba(6, 8, 14, 0.04) 14%,
+      transparent 22%
+    ),
+    linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 72px,
+      rgba(6, 8, 14, 0.03) 118px,
+      rgba(6, 8, 14, 0.08) 168px,
+      rgba(6, 8, 14, 0.14) 236px,
+      rgba(6, 8, 14, 0.2) 320px,
+      rgba(6, 8, 14, 0.28) 100%
     ),
     linear-gradient(
       to top,
-      #06080e 0%,
-      rgba(6, 8, 14, 0.4) 12%,
-      transparent 35%
+      rgba(6, 8, 14, 0.92) 0%,
+      rgba(6, 8, 14, 0.7) 14%,
+      rgba(6, 8, 14, 0.36) 34%,
+      rgba(6, 8, 14, 0.12) 58%,
+      transparent 82%
     );
   pointer-events: none;
   z-index: 4;
+  /* Keep the header zone transparent, but transition into the vignette smoothly */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 72px,
+    rgba(0, 0, 0, 0.06) 108px,
+    rgba(0, 0, 0, 0.22) 148px,
+    rgba(0, 0, 0, 0.46) 210px,
+    rgba(0, 0, 0, 0.7) 290px,
+    black 380px
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 72px,
+    rgba(0, 0, 0, 0.06) 108px,
+    rgba(0, 0, 0, 0.22) 148px,
+    rgba(0, 0, 0, 0.46) 210px,
+    rgba(0, 0, 0, 0.7) 290px,
+    black 380px
+  );
 }
 
 /* Content -- positioned left, clean typography */
@@ -195,32 +251,41 @@
   gap: 12px;
 }
 
-.hero-btn {
-  padding: 12px 28px;
-  font-size: 14px;
+.hero-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 10px 20px;
+  font-size: 13px;
   font-weight: 600;
-  border-radius: var(--radius-md);
-  transition: opacity var(--transition-fast);
+  border-radius: 980px;
+  text-decoration: none;
+  transition: background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
 }
 
-.hero-btn.btn-primary {
-  background: var(--primary);
-  color: #000;
-  border: none;
+.hero-pill-primary {
+  background: rgba(0, 229, 255, 0.18);
+  color: #fff;
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  backdrop-filter: blur(12px);
 }
 
-.hero-btn.btn-primary:hover {
-  opacity: 0.85;
+.hero-pill-primary:hover {
+  background: rgba(0, 229, 255, 0.30);
+  border-color: rgba(0, 229, 255, 0.35);
 }
 
-.hero-btn.btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: white;
+.hero-pill-secondary {
+  background: rgba(255, 255, 255, 0.10);
+  color: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  backdrop-filter: blur(12px);
 }
 
-.hero-btn.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
+.hero-pill-secondary:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 /* Loading */

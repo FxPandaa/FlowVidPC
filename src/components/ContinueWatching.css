@@ -302,7 +302,9 @@
 }
 
 .delete-confirm-popup {
-  background: var(--bg-secondary);
+  background: rgba(14, 16, 22, 0.82);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg);
   padding: 24px;

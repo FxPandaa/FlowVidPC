@@ -1,26 +1,100 @@
-﻿/* -- Settings Page -- clean, flat, no glows -- */
+﻿/* -- Settings Page — sidebar + content layout -- */
 .settings-page {
-  padding: 28px 48px;
-  max-width: 860px;
-  margin: 0 auto;
+  display: flex;
+  min-height: calc(100vh - 64px);
+  overflow: hidden;
 }
 
-.settings-page > h1 {
-  font-size: 24px;
+/* ── Sidebar ── */
+.settings-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  padding: 28px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  overflow-y: auto;
+  align-self: stretch;
+}
+
+.settings-sidebar-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 0 12px 16px;
+}
+
+.settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  text-align: left;
+  width: 100%;
+}
+
+.settings-nav-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.settings-nav-item.active {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+/* ── Content ── */
+.settings-content {
+  flex: 1;
+  min-width: 0;
+  padding: 28px 48px;
+  overflow-y: auto;
+  max-width: 780px;
+}
+
+.settings-content-title {
+  font-size: 22px;
   font-weight: 700;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
   letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 
 .settings-section {
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 
 .settings-section h2 {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 8px;
+}
+
+.settings-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  margin: 12px 0;
+}
+
+.settings-sub-heading {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
 }
 
 .section-description {
@@ -72,7 +146,6 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .setting-item:last-child {
@@ -179,7 +252,9 @@
 }
 
 .modal-content {
-  background: rgba(12, 14, 20, 0.98);
+  background: rgba(12, 14, 20, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
   border-radius: var(--radius-lg);
@@ -381,6 +456,33 @@
 
 @media (max-width: 768px) {
   .settings-page {
+    flex-direction: column;
+  }
+
+  .settings-sidebar {
+    width: 100%;
+    flex-direction: row;
+    overflow-x: auto;
+    gap: 4px;
+    padding: 12px 14px;
+    border-right: none;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .settings-sidebar-title {
+    display: none;
+  }
+
+  .settings-nav-item {
+    white-space: nowrap;
+    padding: 7px 14px;
+  }
+
+  .settings-nav-item svg {
+    display: none;
+  }
+
+  .settings-content {
     padding: 20px;
   }
 
@@ -398,6 +500,8 @@
 /* Subscription Section */
 .subscription-card {
   background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-lg);
   padding: 20px 24px;
@@ -537,7 +641,7 @@
   color: #fff;
   font-weight: 600;
   padding: 10px 22px;
-  border-radius: var(--radius-md);
+  border-radius: 980px;
   font-size: 14px;
   transition: opacity var(--transition-fast);
 }
@@ -688,7 +792,9 @@
 
 .delete-account-modal {
   width: min(100%, 560px);
-  background: rgba(18, 19, 24, 0.98);
+  background: rgba(18, 19, 24, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(239, 68, 68, 0.22);
   border-radius: 18px;
   padding: 24px;
@@ -734,7 +840,7 @@
   color: white;
   border: none;
   padding: 8px 20px;
-  border-radius: var(--radius-md);
+  border-radius: 980px;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
@@ -847,4 +953,36 @@
   font-size: 12px;
   color: var(--text-tertiary);
   margin: 4px 0 0;
+}
+
+/* Friend code button */
+.friend-code-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  color: inherit;
+}
+
+.friend-code-btn:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.friend-code-text {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  letter-spacing: 2.5px;
+  color: var(--text-primary, #fff);
+}
+
+.friend-code-hint {
+  font-size: 11px;
+  color: var(--text-secondary, #a0a0b0);
 }

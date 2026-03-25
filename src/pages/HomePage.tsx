@@ -13,6 +13,9 @@ let _cachedPopularMovies: MediaItem[] = [];
 let _cachedPopularSeries: MediaItem[] = [];
 let _cachedTopRatedMovies: MediaItem[] = [];
 let _cachedTopRatedSeries: MediaItem[] = [];
+let _homeCacheTimestamp = 0;
+
+const HOME_CACHE_TTL_MS = 10 * 60 * 1000;
 
 export function HomePage() {
   const [popularMovies, setPopularMovies] =
@@ -45,6 +48,27 @@ export function HomePage() {
     return combined.slice(0, 10);
   }, [popularMovies, popularSeries]);
 
+  const continueWatchingItems = useMemo(() => {
+    if (watchHistory.length === 0) return [];
+
+    const seenSeries = new Set<string>();
+    const items: typeof watchHistory = [];
+
+    for (const item of watchHistory) {
+      if (item.progress >= 95) continue;
+      if (item.type === "movie") {
+        items.push(item);
+        continue;
+      }
+      if (!seenSeries.has(item.imdbId)) {
+        seenSeries.add(item.imdbId);
+        items.push(item);
+      }
+    }
+
+    return items;
+  }, [watchHistory]);
+
   // Fetch full details from Cinemeta for hero items missing logos
   useEffect(() => {
     if (featuredItems.length === 0) return;
@@ -68,6 +92,12 @@ export function HomePage() {
   }, [featuredItems.length]);
 
   useEffect(() => {
+    const hasFreshCache =
+      _cachedPopularMovies.length > 0 &&
+      Date.now() - _homeCacheTimestamp < HOME_CACHE_TTL_MS;
+
+    if (hasFreshCache) return;
+
     loadContent();
   }, []);
 
@@ -92,6 +122,7 @@ export function HomePage() {
       _cachedPopularSeries = popularSeriesData;
       _cachedTopRatedMovies = topRatedMoviesData;
       _cachedTopRatedSeries = topRatedSeriesData;
+      _homeCacheTimestamp = Date.now();
 
       setPopularMovies(popularMoviesData);
       setPopularSeries(popularSeriesData);
@@ -111,16 +142,9 @@ export function HomePage() {
       <div className="content-rows">
         {/* Continue Watching - only show if there's history */}
         {/* For series, only show the most recent episode per series */}
-        {watchHistory.length > 0 && (
+        {continueWatchingItems.length > 0 && (
           <ContinueWatching
-            items={watchHistory.filter((item, index, self) => {
-              // Skip finished items (≥95% watched)
-              if (item.progress >= 95) return false;
-              // For movies, always include
-              if (item.type === "movie") return true;
-              // For series, only include if it's the first occurrence of this imdbId
-              return self.findIndex((h) => h.imdbId === item.imdbId) === index;
-            })}
+            items={continueWatchingItems}
           />
         )}
 

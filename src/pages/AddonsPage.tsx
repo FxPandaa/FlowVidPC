@@ -1,6 +1,7 @@
 import { useState, useRef } from "react";
 import { useAddonStore } from "../stores/addonStore";
 import { useFeatureGate } from "../hooks/useFeatureGate";
+import { useAuthStore } from "../stores/authStore";
 import { UpgradePrompt } from "../components";
 import "./AddonsPage.css";
 
@@ -8,6 +9,7 @@ export function AddonsPage() {
   const { addons, isLoading, error, installAddon, removeAddon, toggleAddon, reorderAddon, refreshManifest, clearError } =
     useAddonStore();
   const { canInstallAddons } = useFeatureGate();
+  const hasSession = useAuthStore((s) => Boolean(s.token));
   const [manifestUrl, setManifestUrl] = useState("");
   const [installing, setInstalling] = useState(false);
   const [installError, setInstallError] = useState<string | null>(null);
@@ -105,6 +107,16 @@ export function AddonsPage() {
       </div>
 
       {showUpgrade && <UpgradePrompt onClose={() => setShowUpgrade(false)} />}
+
+      {!canInstallAddons && (
+        <div className="addons-subscription-banner">
+          <p>
+            {!hasSession
+              ? "You need an account and a FlowVid+ subscription to install and use addons."
+              : "You need a FlowVid+ subscription to install and use addons."}
+          </p>
+        </div>
+      )}
 
       {/* Install form */}
       <section className="addons-install-section">

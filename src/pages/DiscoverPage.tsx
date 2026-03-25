@@ -137,6 +137,8 @@ export function DiscoverPage() {
   const [ratingMax, setRatingMax] = useState<string>("");
   const [language, setLanguage] = useState("");
   const [genreDropdownOpen, setGenreDropdownOpen] = useState(false);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const [langDropdownOpen, setLangDropdownOpen] = useState(false);
 
   const [results, setResults] = useState<TmdbDiscoverItem[]>([]);
   const [page, setPage] = useState(1);
@@ -146,6 +148,8 @@ export function DiscoverPage() {
 
   const sentinelRef = useRef<HTMLDivElement>(null);
   const genreDropdownRef = useRef<HTMLDivElement>(null);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+  const langDropdownRef = useRef<HTMLDivElement>(null);
 
   // Load genres when type changes
   useEffect(() => {
@@ -164,6 +168,32 @@ export function DiscoverPage() {
     }
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [genreDropdownOpen]);
+
+  // Close sort dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target as Node)) {
+        setSortDropdownOpen(false);
+      }
+    };
+    if (sortDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [sortDropdownOpen]);
+
+  // Close language dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target as Node)) {
+        setLangDropdownOpen(false);
+      }
+    };
+    if (langDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [langDropdownOpen]);
 
   // Build filter params
   const filterParams = useMemo(
@@ -280,19 +310,35 @@ export function DiscoverPage() {
         {/* Filter controls row */}
         <div className="discover-filter-row">
           {/* Sort */}
-          <div className="discover-filter-group">
+          <div className="discover-filter-group" ref={sortDropdownRef}>
             <label>Sort By</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="discover-select"
-            >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
+            <div className="discover-custom-dropdown">
+              <button
+                className={`discover-genre-trigger ${sortDropdownOpen ? "open" : ""}`}
+                onClick={() => { setSortDropdownOpen(!sortDropdownOpen); setLangDropdownOpen(false); setGenreDropdownOpen(false); }}
+              >
+                <span>{SORT_OPTIONS.find((o) => o.value === sortBy)?.label || "Most Popular"}</span>
+                <svg className="dropdown-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {sortDropdownOpen && (
+                <div className="discover-genre-menu">
+                  {SORT_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      className={`discover-genre-option ${sortBy === opt.value ? "selected" : ""}`}
+                      onClick={() => { setSortBy(opt.value); setSortDropdownOpen(false); }}
+                    >
+                      <span className="genre-check">
+                        {sortBy === opt.value && <Check size={12} />}
+                      </span>
+                      <span>{opt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Year range */}
@@ -350,19 +396,35 @@ export function DiscoverPage() {
           </div>
 
           {/* Language */}
-          <div className="discover-filter-group">
+          <div className="discover-filter-group" ref={langDropdownRef}>
             <label>Language</label>
-            <select
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              className="discover-select"
-            >
-              {LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.label}
-                </option>
-              ))}
-            </select>
+            <div className="discover-custom-dropdown">
+              <button
+                className={`discover-genre-trigger ${langDropdownOpen ? "open" : ""}`}
+                onClick={() => { setLangDropdownOpen(!langDropdownOpen); setSortDropdownOpen(false); setGenreDropdownOpen(false); }}
+              >
+                <span>{LANGUAGES.find((l) => l.code === language)?.label || "All Languages"}</span>
+                <svg className="dropdown-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+              {langDropdownOpen && (
+                <div className="discover-genre-menu">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      className={`discover-genre-option ${language === lang.code ? "selected" : ""}`}
+                      onClick={() => { setLanguage(lang.code); setLangDropdownOpen(false); }}
+                    >
+                      <span className="genre-check">
+                        {language === lang.code && <Check size={12} />}
+                      </span>
+                      <span>{lang.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {hasActiveFilters && (
@@ -377,7 +439,7 @@ export function DiscoverPage() {
         <div className="discover-genre-dropdown" ref={genreDropdownRef}>
           <button
             className={`discover-genre-trigger ${genreDropdownOpen ? "open" : ""} ${selectedGenres.length > 0 ? "has-selection" : ""}`}
-            onClick={() => setGenreDropdownOpen(!genreDropdownOpen)}
+            onClick={() => { setGenreDropdownOpen(!genreDropdownOpen); setSortDropdownOpen(false); setLangDropdownOpen(false); }}
           >
             <span>
               {selectedGenres.length === 0

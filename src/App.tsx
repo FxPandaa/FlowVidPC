@@ -14,6 +14,7 @@ import {
   BrowsePage,
   AddonsPage,
   OnboardingPage,
+  FriendsPage,
 } from "./pages";
 import { useProfileStore, useSettingsStore } from "./stores";
 import { STOCK_AVATARS } from "./stores/profileStore";
@@ -23,6 +24,8 @@ import { flushPendingSync } from "./stores/libraryStore";
 import { useAddonStore } from "./stores/addonStore";
 import { useSubscriptionStore } from "./stores/subscriptionStore";
 import { platformFetch } from "./utils/platform";
+import { watchPartyService } from "./services/watchPartyService";
+import { ToastContainer, showToast } from "./components/ToastContainer";
 import { useEffect, useState } from "react";
 import type { Update } from "@tauri-apps/plugin-updater";
 import { check } from "@tauri-apps/plugin-updater";
@@ -88,6 +91,8 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
       loadAddonsFromServer();
       loadSettingsFromServer();
       fetchSubscriptionStatus();
+      watchPartyService.setToastHandler(showToast);
+      watchPartyService.loadFriends();
 
       // Load profiles from server, then ensure a main profile exists
       loadProfiles().then(async () => {        
@@ -147,6 +152,9 @@ function AppInitializer({ children }: { children: React.ReactNode }) {
           }
         }
       });
+    } else {
+      // Disconnect watch party socket when logged out
+      watchPartyService.disconnect();
     }
   }, [isAuthenticated, loadFromServer, loadSettingsFromServer, loadAddonsFromServer, fetchSubscriptionStatus, loadProfiles, createProfile, setActiveProfile, user]);
 
@@ -214,10 +222,12 @@ function App() {
             <Route path="library" element={<LibraryPage />} />
             <Route path="calendar" element={<CalendarPage />} />
             <Route path="addons" element={<AddonsPage />} />
+            <Route path="friends" element={<FriendsPage />} />
             <Route path="settings" element={<SettingsPage />} />
             <Route path="onboarding" element={<OnboardingPage />} />
           </Route>
         </Routes>
+        <ToastContainer />
       </AppInitializer>
     </BrowserRouter>
   );

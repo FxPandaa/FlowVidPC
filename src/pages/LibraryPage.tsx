@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useLibraryStore } from "../stores";
 import { MediaCard, ContinueWatching } from "../components";
@@ -7,17 +7,28 @@ import {
   Clipboard,
   Search,
   BookOpen,
+  Check,
 } from "../components/Icons";
 import { MediaItem } from "../services";
 import "./LibraryPage.css";
+
+const SORT_OPTIONS = [
+  { value: "recent", label: "Recently Added" },
+  { value: "title", label: "Title (A-Z)" },
+  { value: "rating", label: "Rating" },
+  { value: "year", label: "Year" },
+  { value: "runtime", label: "Runtime" },
+];
 
 export function LibraryPage() {
   const {
     library,
     watchHistory,
-    activeFilter,
+    typeFilter,
+    statusFilter,
     sortBy,
-    setFilter,
+    setTypeFilter,
+    setStatusFilter,
     setSortBy,
     getFilteredLibrary,
     clearWatchHistory,
@@ -26,6 +37,20 @@ export function LibraryPage() {
 
   const filteredLibrary = getFilteredLibrary();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false);
+  const sortDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close sort dropdown on outside click
+  useEffect(() => {
+    if (!sortDropdownOpen) return;
+    const handler = (e: MouseEvent) => {
+      if (sortDropdownRef.current && !sortDropdownRef.current.contains(e.target as Node)) {
+        setSortDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [sortDropdownOpen]);
 
   // Convert library items to MediaItem format for cinemeta
   const libraryItems: MediaItem[] = filteredLibrary.map((item) => ({
@@ -60,50 +85,88 @@ export function LibraryPage() {
       <div className="library-top">
         <h1>My Library</h1>
         <div className="library-controls">
-          <div className="filter-buttons">
-            <button
-              className={`filter-btn ${activeFilter === "all" ? "active" : ""}`}
-              onClick={() => setFilter("all")}
-            >
-              All
-            </button>
-            <button
-              className={`filter-btn ${activeFilter === "movies" ? "active" : ""}`}
-              onClick={() => setFilter("movies")}
-            >
-              Movies
-            </button>
-            <button
-              className={`filter-btn ${activeFilter === "series" ? "active" : ""}`}
-              onClick={() => setFilter("series")}
-            >
-              Series
-            </button>
-            <button
-              className={`filter-btn ${activeFilter === "favorites" ? "active" : ""}`}
-              onClick={() => setFilter("favorites")}
-            >
-              <StarFilled size={14} /> Favorites
-            </button>
-            <button
-              className={`filter-btn ${activeFilter === "watchlist" ? "active" : ""}`}
-              onClick={() => setFilter("watchlist")}
-            >
-              <Clipboard size={14} /> Watchlist
-            </button>
+          <div className="library-filter-rows">
+            <div className="filter-buttons">
+              <button
+                className={`filter-btn ${typeFilter === "all" ? "active" : ""}`}
+                onClick={() => setTypeFilter("all")}
+              >
+                All
+              </button>
+              <button
+                className={`filter-btn ${typeFilter === "movies" ? "active" : ""}`}
+                onClick={() => setTypeFilter("movies")}
+              >
+                Movies
+              </button>
+              <button
+                className={`filter-btn ${typeFilter === "series" ? "active" : ""}`}
+                onClick={() => setTypeFilter("series")}
+              >
+                Series
+              </button>
+            </div>
+            <div className="filter-buttons">
+              <button
+                className={`filter-btn ${statusFilter === "all" ? "active" : ""}`}
+                onClick={() => setStatusFilter("all")}
+              >
+                All Status
+              </button>
+              <button
+                className={`filter-btn ${statusFilter === "favorites" ? "active" : ""}`}
+                onClick={() => setStatusFilter("favorites")}
+              >
+                <StarFilled size={14} /> Favorites
+              </button>
+              <button
+                className={`filter-btn ${statusFilter === "watchlist" ? "active" : ""}`}
+                onClick={() => setStatusFilter("watchlist")}
+              >
+                <Clipboard size={14} /> Watchlist
+              </button>
+              <button
+                className={`filter-btn ${statusFilter === "watched" ? "active" : ""}`}
+                onClick={() => setStatusFilter("watched")}
+              >
+                <Check size={14} /> Watched
+              </button>
+              <button
+                className={`filter-btn ${statusFilter === "unwatched" ? "active" : ""}`}
+                onClick={() => setStatusFilter("unwatched")}
+              >
+                Unwatched
+              </button>
+            </div>
           </div>
 
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as any)}
-            className="sort-select"
-          >
-            <option value="recent">Recently Added</option>
-            <option value="title">Title (A-Z)</option>
-            <option value="rating">Rating</option>
-            <option value="year">Year</option>
-            <option value="runtime">Runtime</option>
-          </select>
+          <div className="library-sort-dropdown" ref={sortDropdownRef}>
+            <button
+              className={`library-sort-trigger ${sortDropdownOpen ? "open" : ""}`}
+              onClick={() => setSortDropdownOpen(!sortDropdownOpen)}
+            >
+              <span>{SORT_OPTIONS.find((o) => o.value === sortBy)?.label || "Recently Added"}</span>
+              <svg className="dropdown-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </button>
+            {sortDropdownOpen && (
+              <div className="library-sort-menu">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    className={`library-sort-option ${sortBy === opt.value ? "selected" : ""}`}
+                    onClick={() => { setSortBy(opt.value as any); setSortDropdownOpen(false); }}
+                  >
+                    <span className="sort-check">
+                      {sortBy === opt.value && <Check size={12} />}
+                    </span>
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

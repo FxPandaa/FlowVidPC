@@ -2,7 +2,7 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
 import { MediaItem } from "../services/metadata/cinemeta";
-import { useValidatedImage } from "../utils/useValidatedImage";
+import { rememberValidatedImageResult, useValidatedImage } from "../utils/useValidatedImage";
 import { Film, Tv, Play, StarFilled, Check, X } from "./Icons";
 import "./MediaCard.css";
 
@@ -29,10 +29,19 @@ export function MediaCard({
   const [runtimePosterError, setRuntimePosterError] = useState(false);
   const [runtimeBackdropError, setRuntimeBackdropError] = useState(false);
 
-  const validatedPoster = useValidatedImage(item.poster || null);
-  const validatedLogo = useValidatedImage(item.logo || null);
+  // Only validate images needed for the current variant.
+  // Poster mode: only needs poster.  Landscape mode: needs backdrop + logo.
+  // Passing null avoids triggering a tauriFetch for unused images.
+  const validatedPoster = useValidatedImage(
+    variant === "poster" ? (item.poster || null) : null,
+  );
+  const validatedLogo = useValidatedImage(
+    variant === "landscape" ? (item.logo || null) : null,
+  );
   const validatedBackdrop = useValidatedImage(
-    (item.backdrop || item.background || item.poster) ?? null,
+    variant === "landscape"
+      ? ((item.backdrop || item.background || item.poster) ?? null)
+      : null,
   );
 
   if (variant === "landscape") {
@@ -49,7 +58,10 @@ export function MediaCard({
               src={bgImage}
               alt={item.title}
               loading="lazy"
-              onError={() => setRuntimeBackdropError(true)}
+              onError={() => {
+                rememberValidatedImageResult(bgImage, false);
+                setRuntimeBackdropError(true);
+              }}
             />
           ) : (
             <div className="media-card-placeholder">
@@ -67,7 +79,10 @@ export function MediaCard({
               <img
                 src={validatedLogo}
                 alt={item.title}
-                onError={() => setRuntimeLogoError(true)}
+                onError={() => {
+                  rememberValidatedImageResult(validatedLogo, false);
+                  setRuntimeLogoError(true);
+                }}
               />
             </div>
           ) : (
@@ -111,7 +126,10 @@ export function MediaCard({
             src={validatedPoster}
             alt={item.title}
             loading="lazy"
-            onError={() => setRuntimePosterError(true)}
+            onError={() => {
+              rememberValidatedImageResult(validatedPoster, false);
+              setRuntimePosterError(true);
+            }}
           />
         ) : (
           <div className="media-card-placeholder">

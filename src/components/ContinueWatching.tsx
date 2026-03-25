@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { WatchHistoryItem, useLibraryStore } from "../stores/libraryStore";
 import { getFeatureGate } from "../hooks/useFeatureGate";
-import { useValidatedImage } from "../utils/useValidatedImage";
+import { rememberValidatedImageResult, useValidatedImage } from "../utils/useValidatedImage";
 import { Film, Tv, Play, X, ChevronLeft, ChevronRight } from "./Icons";
 import "./ContinueWatching.css";
 
@@ -67,13 +67,16 @@ export function ContinueWatching({ items }: ContinueWatchingProps) {
 
 function ContinueWatchingCard({ item }: { item: WatchHistoryItem }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [posterError, setPosterError] = useState(false);
+  const [primaryPosterError, setPrimaryPosterError] = useState(false);
+  const [fallbackPosterError, setFallbackPosterError] = useState(false);
 
   // Always construct a reliable MetaHub poster URL from the IMDB ID
   const metahubPoster = item.imdbId ? `https://images.metahub.space/poster/medium/${item.imdbId}/img` : null;
-  // Use stored poster if available, otherwise fall back to MetaHub
-  const posterUrl = item.poster || metahubPoster;
-  const validatedPoster = useValidatedImage(posterUrl);
+  const primaryPosterUrl = item.poster || null;
+  const validatedPrimaryPoster = useValidatedImage(primaryPosterUrl);
+  const validatedFallbackPoster = useValidatedImage(
+    primaryPosterUrl && primaryPosterError && !fallbackPosterError ? metahubPoster : !primaryPosterUrl ? metahubPoster : null,
+  );
   const { removeFromHistory } = useLibraryStore();
   const navigate = useNavigate();
 
@@ -132,17 +135,23 @@ function ContinueWatchingCard({ item }: { item: WatchHistoryItem }) {
         style={{ cursor: "pointer" }}
       >
         <div className="continue-card-poster">
-          {validatedPoster && !posterError ? (
+          {validatedPrimaryPoster && !primaryPosterError ? (
             <img
-              src={validatedPoster}
+              src={validatedPrimaryPoster}
               alt={item.title}
-              onError={() => setPosterError(true)}
+              onError={() => {
+                rememberValidatedImageResult(validatedPrimaryPoster, false);
+                setPrimaryPosterError(true);
+              }}
             />
-          ) : metahubPoster && posterError ? (
+          ) : validatedFallbackPoster && !fallbackPosterError ? (
             <img
-              src={metahubPoster}
+              src={validatedFallbackPoster}
               alt={item.title}
-              onError={(e) => (e.currentTarget.style.display = "none")}
+              onError={() => {
+                rememberValidatedImageResult(validatedFallbackPoster, false);
+                setFallbackPosterError(true);
+              }}
             />
           ) : (
             <div className="continue-card-placeholder">

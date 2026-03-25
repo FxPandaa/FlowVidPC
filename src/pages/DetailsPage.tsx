@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   cinemetaService,
@@ -15,6 +15,7 @@ import { useLibraryStore, useSettingsStore } from "../stores";
 import { useAddonStore, type AddonStreamResult } from "../stores/addonStore";
 import { useFeatureGate } from "../hooks/useFeatureGate";
 import { UpgradePrompt } from "../components";
+import { WatchPartySetupModal } from "../components/WatchPartySetupModal";
 import { useValidatedImage } from "../utils/useValidatedImage";
 import {
   StarFilled,
@@ -58,6 +59,8 @@ export function DetailsPage() {
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const [activeTrailer, setActiveTrailer] = useState<{ key: string; name: string } | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
+  const [upgradeContext, setUpgradeContext] = useState<"general" | "watchparty" | "addon" | "library" | "sync">("general");
+  const [showAddonNeeded, setShowAddonNeeded] = useState(false);
 
   const trailersRef = useRef<HTMLDivElement>(null);
   const castRef = useRef<HTMLDivElement>(null);
@@ -74,7 +77,11 @@ export function DetailsPage() {
   } = useLibraryStore();
   const { blurUnwatchedEpisodes } = useSettingsStore();
   const { getStreamsProgressive } = useAddonStore();
-  const { canWatch, canAddToLibrary } = useFeatureGate();
+  const { canAddToLibrary, canWatchParty } = useFeatureGate();
+  const addons = useAddonStore((s) => s.addons);
+  const installedAddons = useMemo(() => addons.filter((a) => a.enabled), [addons]);
+  const hasAddons = installedAddons.length > 0;
+  const [showWatchPartySetup, setShowWatchPartySetup] = useState(false);
 
   const isMovie = type === "movie";
   const validLogo = useValidatedImage(details?.logo);
@@ -200,8 +207,8 @@ export function DetailsPage() {
     season?: number,
     episode?: number,
   ) => {
-    if (!canWatch) {
-      setShowUpgrade(true);
+    if (!hasAddons) {
+      setShowAddonNeeded(true);
       return;
     }
     if (isMovie) {
@@ -218,6 +225,7 @@ export function DetailsPage() {
   const handleLibraryToggle = () => {
     if (!details?.imdbId) return;
     if (!inLibrary && !canAddToLibrary) {
+      setUpgradeContext("library");
       setShowUpgrade(true);
       return;
     }
@@ -264,7 +272,7 @@ export function DetailsPage() {
     return (
       <div className="details-page details-error">
         <h2>Content not found</h2>
-        <Link to="/" className="btn btn-primary">
+        <Link to="/" className="btn btn-secondary">
           Go Home
         </Link>
       </div>
@@ -393,10 +401,10 @@ export function DetailsPage() {
 
           <div className="details-actions">
             <button
-              className="btn btn-primary"
+              className="action-pill action-pill-primary"
               onClick={() => {
-                if (!canWatch) {
-                  setShowUpgrade(true);
+                if (!hasAddons) {
+                  setShowAddonNeeded(true);
                   return;
                 }
                 if (isMovie) {
@@ -414,7 +422,25 @@ export function DetailsPage() {
             </button>
 
             <button
-              className={`btn ${inLibrary ? "btn-secondary" : "btn-ghost"}`}
+              className="action-pill action-pill-secondary"
+              onClick={() => {
+                if (!hasAddons) {
+                  setShowAddonNeeded(true);
+                  return;
+                }
+                if (!canWatchParty) {
+                  setUpgradeContext("watchparty");
+                  setShowUpgrade(true);
+                  return;
+                }
+                setShowWatchPartySetup(true);
+              }}
+            >
+              Watch Together
+            </button>
+
+            <button
+              className={`action-pill ${inLibrary ? "action-pill-active" : "action-pill-secondary"}`}
               onClick={handleLibraryToggle}
             >
               {inLibrary ? (
@@ -429,7 +455,7 @@ export function DetailsPage() {
             {inLibrary && (
               <>
                 <button
-                  className={`btn ${isFavorite ? "btn-favorite" : "btn-ghost"}`}
+                  className={`action-pill action-pill-secondary action-pill-favorite ${isFavorite ? "active" : ""}`}
                   onClick={handleFavoriteToggle}
                   title="Toggle favorite"
                 >
@@ -445,7 +471,7 @@ export function DetailsPage() {
                 </button>
 
                 <button
-                  className={`btn ${isWatchlist ? "btn-watchlist" : "btn-ghost"}`}
+                  className={`action-pill ${isWatchlist ? "action-pill-active" : "action-pill-secondary"}`}
                   onClick={handleWatchlistToggle}
                   title="Toggle watchlist"
                 >
@@ -461,7 +487,7 @@ export function DetailsPage() {
             )}
 
             <button
-              className="btn btn-ghost"
+              className="action-pill action-pill-secondary"
               onClick={() => {
                 if (isMovie) {
                   setStreams([]);
@@ -952,7 +978,55 @@ export function DetailsPage() {
         />
       )}
 
-      {showUpgrade && <UpgradePrompt onClose={() => setShowUpgrade(false)} />}
+      {showAddonNeeded && (
+        <div className="addon-needed-overlay" onClick={() => setShowAddonNeeded(false)}>
+          <div className="addon-needed-modal" onClick={(e) => e.stopPropagation()}>
+            <h2>Addon Required</h2>
+            <p>
+              You need to install an addon that supports this content before you can play it.
+            </p>
+            <p className="addon-needed-hint">
+              Go to the Addons page to install one.
+            </p>
+            <div className="addon-needed-actions">
+              <button className="btn btn-ghost" onClick={() => setShowAddonNeeded(false)}>
+                Close
+              </button>
+              <button className="btn btn-secondary" onClick={() => { setShowAddonNeeded(false); navigate("/addons"); }}>
+                Go to Addons
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUpgrade && <UpgradePrompt context={upgradeContext} onClose={() => setShowUpgrade(false)} />}
+
+      {showWatchPartySetup && details && (
+        <WatchPartySetupModal
+          media={{
+            imdbId: details.imdbId,
+            type: type!,
+            title: details.title || details.name || "",
+            poster: details.poster,
+          }}
+          onClose={() => setShowWatchPartySetup(false)}
+          onRoomReady={(_code, _isHost, _media) => {
+            setShowWatchPartySetup(false);
+            // Navigate to player — for movies go directly, for series user picks episode
+            if (isMovie) {
+              // Open source picker so user can select a stream
+              setStreams([]);
+              setShowEpisodePopup(true);
+              handleLoadStreams();
+            } else {
+              document
+                .querySelector(".details-episodes")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

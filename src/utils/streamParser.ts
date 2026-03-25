@@ -248,8 +248,8 @@ function parseDolbyVisionProfile(t: string): string | undefined {
 
 function detectHDR(t: string): boolean {
   return (
-    /\bHDR\b/.test(t) ||
-    /[\[.\s]HDR[\].\s]/.test(t) ||
+    /\bHDR/.test(t) || // Matches HDR, HDR10, HDR10+, HDR10PLUS etc.
+    /[\[.\s]HDR/.test(t) ||
     detectDolbyVision(t) ||
     t.includes("HLG") ||
     t.includes("BT2020") ||
@@ -323,24 +323,9 @@ function detectAtmos(t: string): boolean {
 }
 
 function parseSource(t: string): string {
-  // Streaming services
-  if (t.includes("AMZN") || t.includes("AMAZON")) return "Amazon";
-  if (t.includes("NF") || t.includes("NETFLIX")) return "Netflix";
-  if (t.includes("DSNP") || t.includes("DISNEY+") || t.includes("DISNEY PLUS"))
-    return "Disney+";
-  if (
-    t.includes("ATVP") ||
-    t.includes("APPLE TV+") ||
-    t.includes("APPLE TV PLUS")
-  )
-    return "Apple TV+";
-  if (t.includes("HMAX") || t.includes("HBO MAX")) return "HBO Max";
-  if (t.includes("HULU")) return "Hulu";
-  if (t.includes("PCOK") || t.includes("PEACOCK")) return "Peacock";
-  if (t.includes("PMTP") || t.includes("PARAMOUNT+")) return "Paramount+";
-
-  // Physical/Broadcast
+  // Physical/Broadcast sources only — no streaming platform names
   if (t.includes("REMUX")) return "Remux";
+  if (t.includes("UHD") && (t.includes("BLURAY") || t.includes("BLU-RAY"))) return "UHD BluRay";
   if (
     t.includes("BLURAY") ||
     t.includes("BLU-RAY") ||
@@ -348,14 +333,13 @@ function parseSource(t: string): string {
     t.includes("BRRIP")
   )
     return "BluRay";
-  if (t.includes("UHD") && t.includes("BLURAY")) return "UHD BluRay";
   if (t.includes("WEB-DL") || t.includes("WEBDL")) return "WEB-DL";
   if (t.includes("WEBRIP") || t.includes("WEB-RIP")) return "WEBRip";
   if (t.includes("HDTV")) return "HDTV";
   if (t.includes("DVDRIP") || t.includes("DVD-RIP")) return "DVDRip";
   if (t.includes("DVDSCR")) return "DVDScr";
   if (t.includes("CAM") || t.includes("HDCAM")) return "CAM";
-  if (t.includes("TS") || t.includes("TELESYNC") || t.includes("HDTS"))
+  if (/\bTS\b/.test(t) || t.includes("TELESYNC") || t.includes("HDTS"))
     return "TS";
 
   return "";
@@ -412,7 +396,7 @@ function parseLanguages(t: string): string[] {
   const languages: string[] = [];
 
   const langPatterns: Record<string, string[]> = {
-    English: ["ENGLISH", "ENG", "EN"],
+    English: ["ENGLISH", "ENG"],
     Spanish: ["SPANISH", "SPANISH LATINO", "LATINO", "ESP", "SPA"],
     French: ["FRENCH", "FRENCH AUDIO", "FRA", "FRE"],
     German: ["GERMAN", "DEUTSCH", "GER", "DEU"],
@@ -441,7 +425,11 @@ function parseLanguages(t: string): string[] {
 
   for (const [lang, patterns] of Object.entries(langPatterns)) {
     for (const pattern of patterns) {
-      if (t.includes(pattern)) {
+      // Use word-boundary regex for short patterns to avoid false positives
+      const matched = pattern.length <= 3
+        ? new RegExp(`\\b${pattern}\\b`).test(t)
+        : t.includes(pattern);
+      if (matched) {
         if (!languages.includes(lang)) {
           languages.push(lang);
         }
@@ -615,7 +603,7 @@ export function sortStreamsByQuality(
         addonName: r.addonName,
         addonLogo: r.addonLogo,
         stream,
-        score: scoreStream(stream.name ?? stream.title, [stream.name, stream.title, stream.description].filter(Boolean).join(" ")),
+        score: scoreStream(stream.name ?? stream.title, [stream.name, stream.title, stream.description, stream.behaviorHints?.bingeGroup?.replace(/\|/g, " ")].filter(Boolean).join(" ")),
       });
     }
   }

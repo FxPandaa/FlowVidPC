@@ -3,8 +3,32 @@ import { persist, createJSONStorage } from "zustand/middleware";
 import { useAuthStore } from "./authStore";
 import { useSettingsStore } from "./settingsStore";
 import { platformFetch } from "../utils/platform";
+import { normalizeImageUrl } from "../utils/useValidatedImage";
 
 const CINEMETA_BASE = "https://v3-cinemeta.strem.io";
+
+function sanitizeLibraryItem(item: LibraryItem): LibraryItem {
+  return {
+    ...item,
+    poster: normalizeImageUrl(item.poster) ?? undefined,
+    backdrop: normalizeImageUrl(item.backdrop) ?? undefined,
+  };
+}
+
+function sanitizeWatchHistoryItem(item: WatchHistoryItem): WatchHistoryItem {
+  return {
+    ...item,
+    poster: normalizeImageUrl(item.poster) ?? undefined,
+    backdrop: normalizeImageUrl(item.backdrop) ?? undefined,
+  };
+}
+
+function sanitizeProfileLibraryData(data: ProfileLibraryData): ProfileLibraryData {
+  return {
+    library: data.library.map(sanitizeLibraryItem),
+    watchHistory: data.watchHistory.map(sanitizeWatchHistoryItem),
+  };
+}
 
 /** Fetch basic metadata (title, poster, backdrop) from Cinemeta for a single IMDB ID. */
 async function fetchCinemetaMeta(imdbId: string, type: "movie" | "series"): Promise<{
@@ -20,8 +44,8 @@ async function fetchCinemetaMeta(imdbId: string, type: "movie" | "series"): Prom
     if (!meta) return null;
     return {
       title: meta.name || meta.title || "",
-      poster: meta.poster,
-      backdrop: meta.background,
+      poster: normalizeImageUrl(meta.poster) ?? undefined,
+      backdrop: normalizeImageUrl(meta.background) ?? undefined,
       year: meta.year || (meta.releaseInfo ? parseInt(meta.releaseInfo) || undefined : undefined),
     };
   } catch {
@@ -85,7 +109,11 @@ export type LibraryFilter =
   | "movies"
   | "series"
   | "favorites"
-  | "watchlist";
+  | "watchlist"
+  | "watched"
+  | "unwatched";
+export type LibraryTypeFilter = "all" | "movies" | "series";
+export type LibraryStatusFilter = "all" | "favorites" | "watchlist" | "watched" | "unwatched";
 export type LibrarySortBy = "recent" | "title" | "year" | "rating" | "runtime";
 
 interface ProfileLibraryData {
@@ -110,6 +138,8 @@ interface LibraryState {
 
   // Filter/Sort state
   activeFilter: LibraryFilter;
+  typeFilter: LibraryTypeFilter;
+  statusFilter: LibraryStatusFilter;
   sortBy: LibrarySortBy;
   searchQuery: string;
 
@@ -139,6 +169,8 @@ interface LibraryState {
 
   // Filter/Sort
   setFilter: (filter: LibraryFilter) => void;
+  setTypeFilter: (filter: LibraryTypeFilter) => void;
+  setStatusFilter: (filter: LibraryStatusFilter) => void;
   setSortBy: (sortBy: LibrarySortBy) => void;
   setSearchQuery: (query: string) => void;
   getFilteredLibrary: () => LibraryItem[];
@@ -241,6 +273,8 @@ export const useLibraryStore = create<LibraryState>()(
       isSyncing: false,
       lastSyncAt: null,
       activeFilter: "all",
+      typeFilter: "all",
+      statusFilter: "all",
       sortBy: "recent",
       searchQuery: "",
       profileData: {},
@@ -267,10 +301,10 @@ export const useLibraryStore = create<LibraryState>()(
 
         // Load data for new profile (or empty if first time)
         const newData = profileId
-          ? state.profileData[profileId] || {
+          ? sanitizeProfileLibraryData(state.profileData[profileId] || {
               library: [],
               watchHistory: [],
-            }
+            })
           : { library: [], watchHistory: [] };
 
         set({
@@ -278,6 +312,8 @@ export const useLibraryStore = create<LibraryState>()(
           library: newData.library,
           watchHistory: newData.watchHistory,
           activeFilter: "all",
+          typeFilter: "all",
+          statusFilter: "all",
           sortBy: "recent",
           searchQuery: "",
         });
@@ -289,7 +325,7 @@ export const useLibraryStore = create<LibraryState>()(
       },
 
       addToLibrary: (item) => {
-        const newItem: LibraryItem = {
+        const newItem: LibraryItem = sanitizeLibraryItem({
           ...item,
           year: typeof item.year === "string" ? parseInt(item.year, 10) || 0 : item.year,
           rating: typeof item.rating === "string" ? parseFloat(item.rating) || undefined : item.rating,
@@ -299,7 +335,7 @@ export const useLibraryStore = create<LibraryState>()(
           isFavorite: false,
           watchlist: false,
           tags: [],
-        };
+        });
 
         set((state) => ({
           library: [newItem, ...state.library],
@@ -401,11 +437,11 @@ export const useLibraryStore = create<LibraryState>()(
       },
 
       updateWatchProgress: (item, options) => {
-        const newItem: WatchHistoryItem = {
+        const newItem: WatchHistoryItem = sanitizeWatchHistoryItem({
           ...item,
           id: crypto.randomUUID(),
           watchedAt: new Date().toISOString(),
-        };
+        });
 
         set((state) => {
           // Remove existing entry for the same specific content
@@ -473,6 +509,14 @@ export const useLibraryStore = create<LibraryState>()(
         set({ activeFilter: filter });
       },
 
+      setTypeFilter: (filter: LibraryTypeFilter) => {
+        set({ typeFilter: filter });
+      },
+
+      setStatusFilter: (filter: LibraryStatusFilter) => {
+        set({ statusFilter: filter });
+      },
+
       setSortBy: (sortBy: LibrarySortBy) => {
         set({ sortBy });
       },
@@ -482,25 +526,32 @@ export const useLibraryStore = create<LibraryState>()(
       },
 
       getFilteredLibrary: () => {
-        const { library, activeFilter, sortBy, searchQuery } = get();
+        const { library, typeFilter, statusFilter, sortBy, searchQuery } = get();
         let filtered = [...library];
 
-        // Apply filter
-        switch (activeFilter) {
+        // Apply type filter
+        switch (typeFilter) {
           case "movies":
             filtered = filtered.filter((item) => item.type === "movie");
             break;
           case "series":
             filtered = filtered.filter((item) => item.type === "series");
             break;
+        }
+
+        // Apply status filter
+        switch (statusFilter) {
           case "favorites":
             filtered = filtered.filter((item) => item.isFavorite);
             break;
           case "watchlist":
             filtered = filtered.filter((item) => item.watchlist);
             break;
-          case "all":
-          default:
+          case "watched":
+            filtered = filtered.filter((item) => item.watched);
+            break;
+          case "unwatched":
+            filtered = filtered.filter((item) => !item.watched);
             break;
         }
 
@@ -560,11 +611,12 @@ export const useLibraryStore = create<LibraryState>()(
 
           // Coerce types for items that may have string values from Cinemeta
           const cleanLibrary = state.library.map((item) => ({
-            ...item,
+            ...sanitizeLibraryItem(item),
             year: typeof item.year === "string" ? parseInt(item.year, 10) || 0 : item.year,
             rating: typeof item.rating === "string" ? parseFloat(String(item.rating)) || undefined : item.rating,
             runtime: typeof item.runtime === "string" ? parseInt(String(item.runtime), 10) || undefined : item.runtime,
           }));
+          const cleanHistory = state.watchHistory.map(sanitizeWatchHistoryItem);
 
           const [libRes, histRes] = await Promise.all([
             platformFetch(`${API_URL}/sync/library`, {
@@ -583,7 +635,7 @@ export const useLibraryStore = create<LibraryState>()(
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${authState.token}`,
               },
-              body: JSON.stringify({ profileId, history: state.watchHistory }),
+              body: JSON.stringify({ profileId, history: cleanHistory }),
             }),
           ]);
 
@@ -628,10 +680,10 @@ export const useLibraryStore = create<LibraryState>()(
 
           if (res.ok) {
             const { data } = await res.json();
-            const serverLibrary: LibraryItem[] = data.library || [];
-            const serverHistory: WatchHistoryItem[] = data.history || [];
-            const localLibrary = get().library;
-            const localHistory = get().watchHistory;
+            const serverLibrary: LibraryItem[] = (data.library || []).map(sanitizeLibraryItem);
+            const serverHistory: WatchHistoryItem[] = (data.history || []).map(sanitizeWatchHistoryItem);
+            const localLibrary = get().library.map(sanitizeLibraryItem);
+            const localHistory = get().watchHistory.map(sanitizeWatchHistoryItem);
 
             // Merge instead of overwrite — keeps newer local items that
             // haven't been synced to the server yet (e.g. app closed before
@@ -749,6 +801,8 @@ export const useLibraryStore = create<LibraryState>()(
           isSyncing: false,
           lastSyncAt: null,
           activeFilter: "all",
+          typeFilter: "all",
+          statusFilter: "all",
           sortBy: "recent",
           searchQuery: "",
           profileData: {},
@@ -759,12 +813,36 @@ export const useLibraryStore = create<LibraryState>()(
     {
       name: "FlowVid-library",
       storage: createJSONStorage(() => localStorage),
+      merge: (persistedState, currentState) => {
+        const persisted = persistedState as Partial<LibraryState> | undefined;
+        const profileData = Object.fromEntries(
+          Object.entries(persisted?.profileData || {}).map(([profileId, data]) => [
+            profileId,
+            sanitizeProfileLibraryData(data),
+          ]),
+        );
+
+        return {
+          ...currentState,
+          ...persisted,
+          library: (persisted?.library || []).map(sanitizeLibraryItem),
+          watchHistory: (persisted?.watchHistory || []).map(sanitizeWatchHistoryItem),
+          profileData,
+        };
+      },
       partialize: (state) => ({
-        library: state.library,
-        watchHistory: state.watchHistory,
-        profileData: state.profileData,
+        library: state.library.map(sanitizeLibraryItem),
+        watchHistory: state.watchHistory.map(sanitizeWatchHistoryItem),
+        profileData: Object.fromEntries(
+          Object.entries(state.profileData).map(([profileId, data]) => [
+            profileId,
+            sanitizeProfileLibraryData(data),
+          ]),
+        ),
         currentProfileId: state.currentProfileId,
         activeFilter: state.activeFilter,
+        typeFilter: state.typeFilter,
+        statusFilter: state.statusFilter,
         sortBy: state.sortBy,
         lastSyncAt: state.lastSyncAt,
       }),

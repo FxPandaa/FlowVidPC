@@ -15,6 +15,7 @@ export function useFeatureGate() {
     canAddToLibrary: isPaid,
     canInstallAddons: isPaid,
     canSync: isPaid,
+    canWatchParty: isPaid,
   };
 }
 
@@ -22,5 +23,5 @@ export function useFeatureGate() {
 export function getFeatureGate() {
   const subscription = useSubscriptionStore.getState().subscription;
   const isPaid = subscription?.hasAccess ?? false;
-  return { isPaid, canWatch: isPaid, canAddToLibrary: isPaid, canInstallAddons: isPaid, canSync: isPaid };
+  return { isPaid, canWatch: isPaid, canAddToLibrary: isPaid, canInstallAddons: isPaid, canSync: isPaid, canWatchParty: isPaid };
 }

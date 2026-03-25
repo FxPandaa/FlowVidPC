@@ -13,7 +13,9 @@
 }
 
 .person-modal {
-  background: var(--bg-primary, #06080e);
+  background: rgba(6, 8, 14, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-lg, 12px);
   width: 90%;

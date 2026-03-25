@@ -160,7 +160,7 @@ export function ProfileSelectPage() {
             {/* Actions */}
             <div className="profile-form-actions">
               <button
-                className="btn btn-primary"
+                className="btn btn-secondary"
                 onClick={
                   mode === "create" ? handleCreateProfile : handleUpdateProfile
                 }
@@ -265,6 +265,11 @@ export function ProfileSelectPage() {
         </div>
 
         <div className="profile-page-actions">
+          {profiles.length > 1 && (
+            <p className="profile-stream-warning">
+              Some providers may not support multiple simultaneous streams. If you experience playback issues while multiple profiles are streaming at the same time, check with your provider's concurrent stream limits.
+            </p>
+          )}
           {profiles.length > 0 && (
             <button
               className="btn btn-ghost"

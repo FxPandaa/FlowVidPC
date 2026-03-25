@@ -12,6 +12,7 @@ import type { AddonStream } from "../services/addons/types";
 import type { SkipSegment } from "../services";
 import { useLibraryStore, useSettingsStore } from "../stores";
 import { useAddonStore, type AddonStreamResult } from "../stores/addonStore";
+import { useProfileStore } from "../stores/profileStore";
 import {
   SubtitleSelector,
   SubtitleOverlay,
@@ -22,6 +23,9 @@ import {
 } from "../components";
 import { parseStreamInfo } from "../utils/streamParser";
 import { embeddedMpvService } from "../services/embeddedMpvService";
+import { watchPartyService } from "../services/watchPartyService";
+import { useWatchPartyStore } from "../stores/watchPartyStore";
+import { WatchPartyOverlay } from "../components/WatchPartyOverlay";
 import { useFeatureGate } from "../hooks/useFeatureGate";
 import {
   AlertTriangle,
@@ -41,6 +45,7 @@ import {
   HDR10PlusBadge,
   DolbyAtmosBadge,
   HDRBadge,
+  Users,
 } from "../components/Icons";
 import "./PlayerPage.css";
 
@@ -106,6 +111,10 @@ export function PlayerPage() {
   const [seriesEpisodes, setSeriesEpisodes] = useState<any[]>([]);
   const [episodeMenuSeason, setEpisodeMenuSeason] = useState<number>(parseInt(season || "1"));
   const [isLoadingEpisodes, setIsLoadingEpisodes] = useState(false);
+
+  // Watch party state
+  const [showWatchPartyPanel, setShowWatchPartyPanel] = useState(false);
+  const watchPartyState = useWatchPartyStore();
 
   // Tracks how many times we've retried fetching the stream URL (to detect expired links)
   const [streamRetryCount, setStreamRetryCount] = useState(0);
@@ -361,6 +370,35 @@ export function PlayerPage() {
       }
     };
   }, [id, season, episode]);
+
+  // Watch party: start/stop host broadcast based on party membership
+  useEffect(() => {
+    if (watchPartyState.isInParty && watchPartyState.isHost) {
+      watchPartyService.startHostBroadcast();
+    }
+    return () => {
+      watchPartyService.stopHostBroadcast();
+    };
+  }, [watchPartyState.isInParty, watchPartyState.isHost]);
+
+  // Broadcast activity to friends when playing content
+  useEffect(() => {
+    if (!contentDetails || !id) return;
+
+    watchPartyService.broadcastActivity({
+      imdbId: id,
+      mediaType: type || "movie",
+      title: contentDetails.title,
+      season: season ? parseInt(season) : undefined,
+      episode: episode ? parseInt(episode) : undefined,
+      poster: contentDetails.poster,
+      profileName: useProfileStore.getState().getActiveProfile()?.name,
+    });
+
+    return () => {
+      watchPartyService.clearActivity();
+    };
+  }, [id, type, season, episode, contentDetails]);
 
   useEffect(() => {
     if (!id) return;
@@ -1700,12 +1738,12 @@ export function PlayerPage() {
           <p>{error}</p>
           <div className="error-actions">
             <button
-              className="btn btn-primary"
+              className="btn btn-secondary"
               onClick={() => setShowSourcePicker(true)}
             >
               Try Another Source
             </button>
-            <button className="btn btn-secondary" onClick={handleBack}>
+            <button className="btn btn-ghost" onClick={handleBack}>
               Go Back
             </button>
           </div>
@@ -2037,6 +2075,17 @@ export function PlayerPage() {
                 </div>
 
                 <div className="controls-right">
+                  {/* Watch party toggle */}
+                  {watchPartyState.isInParty && (
+                    <button
+                      className="control-btn"
+                      onClick={() => setShowWatchPartyPanel((p) => !p)}
+                      title="Watch Party"
+                    >
+                      <Users size={20} />
+                    </button>
+                  )}
+
                   {/* Next episode button (series only) */}
                   {type === "series" && (
                     <button
@@ -2203,6 +2252,18 @@ export function PlayerPage() {
                 </div>
               </div>
             </div>
+          )}
+
+          {/* Watch Party Overlay */}
+          {showWatchPartyPanel && watchPartyState.isInParty && (
+            <WatchPartyOverlay
+              onSendChat={(text) => watchPartyService.sendChat(text)}
+              onLeave={() => {
+                watchPartyService.leaveRoom();
+                setShowWatchPartyPanel(false);
+              }}
+              onClose={() => setShowWatchPartyPanel(false)}
+            />
           )}
         </>
       )}

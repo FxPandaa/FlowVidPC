@@ -11,3 +11,4 @@ export { DiscoverPage } from "./DiscoverPage";
 export { BrowsePage } from "./BrowsePage";
 export { AddonsPage } from "./AddonsPage";
 export { OnboardingPage } from "./OnboardingPage";
+export { FriendsPage } from "./FriendsPage";

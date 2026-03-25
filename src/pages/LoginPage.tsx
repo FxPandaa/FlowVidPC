@@ -149,7 +149,7 @@ export function LoginPage() {
 
                 <button
                   type="submit"
-                  className="btn btn-primary login-submit-btn"
+                  className="btn btn-secondary login-submit-btn"
                   disabled={isLoading || verificationCode.length !== 6}
                 >
                   {isLoading ? "Verifying..." : "Verify Email"}
@@ -240,7 +240,7 @@ export function LoginPage() {
 
             <button
               type="submit"
-              className="btn btn-primary login-submit-btn"
+              className="btn btn-secondary login-submit-btn"
               disabled={isLoading}
             >
               {isLoading

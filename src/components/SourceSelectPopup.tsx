@@ -39,32 +39,36 @@ export function SourceSelectPopup({
   const { streamSorting, streamDetailMode } = useSettingsStore();
   const totalStreams = streams.reduce((n, r) => n + r.streams.length, 0);
 
-  const renderDetailBadges = (info: StreamInfo) => (
-    <div className="source-detail-badges">
-      {info.hasDolbyVision && <DolbyVisionBadge height={16} />}
-      {info.hasHDR10Plus && <HDR10PlusBadge height={16} />}
-      {info.isHDR &&
-        !info.hasDolbyVision &&
-        !info.hasHDR10Plus &&
-        (info.hdrType === "HDR10" ? (
-          <HDR10Badge height={16} />
-        ) : (
-          <HDRBadge height={16} />
+  const renderDetailBadges = (info: StreamInfo) => {
+    // Filter out English (assumed default) — only show non-English languages
+    const displayLangs = info.languages.filter((l) => l !== "English");
+    return (
+      <div className="source-detail-badges">
+        {info.hasDolbyVision && <DolbyVisionBadge height={16} />}
+        {info.hasHDR10Plus && <HDR10PlusBadge height={16} />}
+        {info.isHDR &&
+          !info.hasDolbyVision &&
+          !info.hasHDR10Plus &&
+          (info.hdrType === "HDR10" ? (
+            <HDR10Badge height={16} />
+          ) : (
+            <HDRBadge height={16} />
+          ))}
+        {info.hasAtmos && <DolbyAtmosBadge height={16} />}
+        {info.videoCodec && <span className="source-tag">{info.videoCodec}</span>}
+        {info.audioCodec && info.audioCodec !== "Atmos" && <span className="source-tag">{info.audioCodec}</span>}
+        {info.audioChannels && info.audioChannels !== "Unknown" && <span className="source-tag">{info.audioChannels}</span>}
+        {info.source && info.source !== "Remux" && <span className="source-tag">{info.source}</span>}
+        {info.fileSize && <span className="source-tag source-tag-size">{info.fileSize}</span>}
+        {info.isRemux && <span className="source-tag source-tag-remux">Remux</span>}
+        {displayLangs.length > 0 && displayLangs.map((lang) => (
+          <span key={lang} className="source-tag source-tag-lang" title={lang}>
+            {LANGUAGE_FLAGS[lang] || lang}
+          </span>
         ))}
-      {info.hasAtmos && <DolbyAtmosBadge height={16} />}
-      {info.videoCodec && <span className="source-tag">{info.videoCodec}</span>}
-      {info.audioCodec && info.audioCodec !== "Atmos" && <span className="source-tag">{info.audioCodec}</span>}
-      {info.audioChannels && info.audioChannels !== "Unknown" && <span className="source-tag">{info.audioChannels}</span>}
-      {info.source && info.source !== "Unknown" && <span className="source-tag">{info.source}</span>}
-      {info.fileSize && <span className="source-tag source-tag-size">{info.fileSize}</span>}
-      {info.isRemux && <span className="source-tag source-tag-remux">Remux</span>}
-      {info.languages.length > 0 && info.languages.map((lang) => (
-        <span key={lang} className="source-tag source-tag-lang" title={lang}>
-          {LANGUAGE_FLAGS[lang] || lang}
-        </span>
-      ))}
-    </div>
-  );
+      </div>
+    );
+  };
 
   const renderCard = (
     key: string,
@@ -74,6 +78,7 @@ export function SourceSelectPopup({
     streamUrl: string,
     addonName: string,
     addonLogo?: string,
+    originalSourceText?: string,
   ) => {
     if (streamDetailMode) {
       return (
@@ -97,6 +102,9 @@ export function SourceSelectPopup({
               {description && streamTitle && (
                 <span className="source-stream-desc">{description}</span>
               )}
+              {originalSourceText && (
+                <span className="source-original-text">{originalSourceText}</span>
+              )}
               {renderDetailBadges(info)}
               {info.releaseGroup && (
                 <span className="source-release-group">{info.releaseGroup}</span>
@@ -115,7 +123,7 @@ export function SourceSelectPopup({
               <span className="source-addon-name">{addonName}</span>
             </div>
             <button
-              className="btn btn-primary btn-sm source-play-btn"
+              className="btn btn-secondary btn-sm source-play-btn"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelectStream(streamUrl);
@@ -158,6 +166,7 @@ export function SourceSelectPopup({
                   <HDRBadge height={16} />
                 ))}
               {info.hasAtmos && <DolbyAtmosBadge height={16} />}
+              {info.fileSize && <span className="source-tag source-tag-size">{info.fileSize}</span>}
             </div>
           </div>
         </div>
@@ -173,7 +182,7 @@ export function SourceSelectPopup({
             <span className="source-addon-name">{addonName}</span>
           </div>
           <button
-            className="btn btn-primary btn-sm source-play-btn"
+            className="btn btn-secondary btn-sm source-play-btn"
             onClick={(e) => {
               e.stopPropagation();
               onSelectStream(streamUrl);
@@ -192,8 +201,12 @@ export function SourceSelectPopup({
       const sorted = sortStreamsByQuality(streams);
       return sorted.map((item, i) => {
         const streamTitle = item.stream.name ?? item.stream.title ?? "";
-        const allText = [item.stream.name, item.stream.title, item.stream.description].filter(Boolean).join(" ");
+        const allText = [item.stream.name, item.stream.title, item.stream.description, item.stream.behaviorHints?.bingeGroup?.replace(/\|/g, " ")].filter(Boolean).join(" ");
         const info = parseStreamInfo(streamTitle, allText);
+        // Build original source text: prefer title if different from name, else description first line
+        const rawSource = (item.stream.title && item.stream.title !== item.stream.name)
+          ? item.stream.title
+          : item.stream.description?.split("\n")[0] || "";
         const streamUrl =
           item.stream.url ??
           (item.stream.infoHash
@@ -208,6 +221,7 @@ export function SourceSelectPopup({
           streamUrl,
           item.addonName,
           item.addonLogo,
+          streamDetailMode ? rawSource : undefined,
         );
       });
     }
@@ -216,8 +230,11 @@ export function SourceSelectPopup({
     return streams.flatMap((addonResult) =>
       addonResult.streams.map((stream, si) => {
         const streamTitle = stream.name ?? stream.title ?? "";
-        const allText = [stream.name, stream.title, stream.description].filter(Boolean).join(" ");
+        const allText = [stream.name, stream.title, stream.description, stream.behaviorHints?.bingeGroup?.replace(/\|/g, " ")].filter(Boolean).join(" ");
         const info = parseStreamInfo(streamTitle, allText);
+        const rawSource = (stream.title && stream.title !== stream.name)
+          ? stream.title
+          : stream.description?.split("\n")[0] || "";
         const streamUrl =
           stream.url ??
           (stream.infoHash
@@ -232,6 +249,7 @@ export function SourceSelectPopup({
           streamUrl,
           addonResult.addonName,
           addonResult.addonLogo,
+          streamDetailMode ? rawSource : undefined,
         );
       }),
     );

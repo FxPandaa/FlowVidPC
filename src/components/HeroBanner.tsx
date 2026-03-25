@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { MediaItem } from "../services/metadata/cinemeta";
-import { useValidatedImage } from "../utils/useValidatedImage";
-import { StarFilled, Play } from "./Icons";
+import { useValidatedImage, getImageCacheStatus, validateImageUrl, rememberValidatedImageResult, normalizeImageUrl } from "../utils/useValidatedImage";
+import { StarFilled } from "./Icons";
 import "./HeroBanner.css";
 
 const ROTATE_INTERVAL = 15000; // 15 seconds
@@ -25,11 +25,12 @@ let _lastHeroBaseUrl: string | null = null;
 const _pinnedImages: HTMLImageElement[] = [];
 
 function preloadImage(url: string | undefined | null) {
-  if (!url || preloadedUrls.has(url)) return;
-  preloadedUrls.add(url);
+  const normalizedUrl = normalizeImageUrl(url);
+  if (!normalizedUrl || preloadedUrls.has(normalizedUrl)) return;
+  preloadedUrls.add(normalizedUrl);
   const img = new Image();
-  img.onload = () => loadedUrls.add(url);
-  img.src = url;
+  img.onload = () => loadedUrls.add(normalizedUrl);
+  img.src = normalizedUrl;
   // Keep a strong JS reference so the decoded image stays in browser memory
   _pinnedImages.push(img);
   if (_pinnedImages.length > 20) _pinnedImages.splice(0, 5);
@@ -41,17 +42,22 @@ function preloadImage(url: string | undefined | null) {
  */
 function ensureImageLoaded(url: string): Promise<void> {
   return new Promise((resolve) => {
-    if (loadedUrls.has(url)) {
+    const normalizedUrl = normalizeImageUrl(url);
+    if (!normalizedUrl) {
+      resolve();
+      return;
+    }
+    if (loadedUrls.has(normalizedUrl)) {
       resolve();
       return;
     }
     const img = new Image();
     img.onload = () => {
-      loadedUrls.add(url);
+      loadedUrls.add(normalizedUrl);
       resolve();
     };
     img.onerror = () => resolve(); // show anyway on error
-    img.src = url;
+    img.src = normalizedUrl;
   });
 }
 
@@ -80,14 +86,26 @@ export function HeroBanner({ items, isLoading = false }: HeroBannerProps) {
   //
   // Prefer items[0]?.backdrop on remount (matches the text content for
   // activeIndex 0), fall back to _lastHeroBaseUrl so we never flash black.
-  const [baseUrl, _setBaseUrl] = useState<string | null>(
-    () => items[0]?.backdrop ?? _lastHeroBaseUrl ?? null,
+  // Only render immediately if cache says it's good; otherwise defer to effect.
+  const [baseUrl, _setBaseUrl] = useState<string | null>(() => {
+    const candidate = normalizeImageUrl(items[0]?.backdrop ?? _lastHeroBaseUrl ?? null);
+    if (!candidate) return null;
+    const status = getImageCacheStatus(candidate);
+    if (status === false) return null;  // known bad
+    if (status === true) return candidate; // known good
+    return null; // unknown — validate via effect first
+  });
+
+  // Ref so the mount-validation effect only runs once for the initial candidate.
+  const initialCandidateRef = useRef(
+    normalizeImageUrl(items[0]?.backdrop ?? _lastHeroBaseUrl ?? null),
   );
 
   // Wrap setter so every update persists to the module-level cache.
   const setBaseUrl = useCallback((url: string | null) => {
-    _lastHeroBaseUrl = url;
-    _setBaseUrl(url);
+    const normalizedUrl = normalizeImageUrl(url);
+    _lastHeroBaseUrl = normalizedUrl;
+    _setBaseUrl(normalizedUrl);
   }, []);
   const [topUrl, setTopUrl] = useState<string | null>(null);
   const [showTop, setShowTop] = useState(false);
@@ -98,29 +116,27 @@ export function HeroBanner({ items, isLoading = false }: HeroBannerProps) {
   const item = items.length > 0 ? items[activeIndex % items.length] : null;
   const validLogo = useValidatedImage(item?.logo);
 
+  // On mount: validate the initial candidate that was deferred from useState.
+  useEffect(() => {
+    const url = initialCandidateRef.current;
+    if (!url || baseUrl !== null) return;
+    validateImageUrl(url).then((ok) => {
+      if (ok) setBaseUrl(url);
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // When items arrive (possibly after mount) make sure we have a baseUrl.
-  // Also handles the case where items are initially empty then populated.
+  // Validate via tauriFetch HEAD so the browser never fires a 404 GET.
   useEffect(() => {
     if (!item?.backdrop) return;
     if (baseUrl === null) {
-      setBaseUrl(item.backdrop!);
+      const url = normalizeImageUrl(item.backdrop!);
+      if (!url) return;
+      validateImageUrl(url).then((ok) => {
+        if (ok) setBaseUrl(url);
+      });
     }
   }, [item?.backdrop]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Fix tab-switch image disappearance: when the user switches back to this
-  // tab, the browser may have evicted the decoded image. Force a re-render by
-  // bumping a counter so the <img> key changes and React re-mounts it.
-  const baseImgRef = useRef<HTMLImageElement>(null);
-  const [imgRevision, setImgRevision] = useState(0);
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        setImgRevision((r) => r + 1);
-      }
-    };
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
-  }, []);
 
   // When activeIndex changes (after initial), crossfade to the new backdrop
   const prevIndexRef = useRef(activeIndex);
@@ -129,32 +145,36 @@ export function HeroBanner({ items, isLoading = false }: HeroBannerProps) {
     prevIndexRef.current = activeIndex;
 
     const newItem = items[activeIndex % items.length];
-    const newUrl = newItem?.backdrop;
+    const newUrl = normalizeImageUrl(newItem?.backdrop);
     if (!newUrl) return;
     if (crossfadeRef.current) return; // don't overlap
     crossfadeRef.current = true;
 
-    ensureImageLoaded(newUrl).then(() => {
-      // Put new image on top layer, then fade it in
-      setTopUrl(newUrl);
-      // Double rAF to ensure the browser has painted opacity 0 before we animate to 1
-      requestAnimationFrame(() => {
+    // Validate the URL through Rust so the browser never fires a 404 GET.
+    validateImageUrl(newUrl).then((ok) => {
+      if (!ok) { crossfadeRef.current = false; return; }
+      ensureImageLoaded(newUrl).then(() => {
+        // Put new image on top layer, then fade it in
+        setTopUrl(newUrl);
+        // Double rAF to ensure the browser has painted opacity 0 before we animate to 1
         requestAnimationFrame(() => {
-          setShowTop(true);
+          requestAnimationFrame(() => {
+            setShowTop(true);
+          });
         });
-      });
 
-      // After the CSS transition completes, promote the top image to base and reset
-      setTimeout(() => {
-        setBaseUrl(newUrl);
-        // Instantly hide top layer — no animation because we remove the active class
-        // which also removes the CSS transition property
-        setShowTop(false);
-        setTopUrl(null);
-        crossfadeRef.current = false;
-      }, CROSSFADE_DURATION + 50); // small buffer beyond CSS duration
+        // After the CSS transition completes, promote the top image to base and reset
+        setTimeout(() => {
+          setBaseUrl(newUrl);
+          // Instantly hide top layer — no animation because we remove the active class
+          // which also removes the CSS transition property
+          setShowTop(false);
+          setTopUrl(null);
+          crossfadeRef.current = false;
+        }, CROSSFADE_DURATION + 50); // small buffer beyond CSS duration
+      });
     });
-  }, [activeIndex, items]);
+  }, [activeIndex, items]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Preload current + next backdrop & logo images
   useEffect(() => {
@@ -253,25 +273,32 @@ export function HeroBanner({ items, isLoading = false }: HeroBannerProps) {
       {/* Backdrop images with crossfade animation */}
       {baseUrl && (
         <img
-          key={`base-${imgRevision}`}
-          ref={baseImgRef}
           className="hero-backdrop"
           src={baseUrl}
           alt=""
           // eslint-disable-next-line
           {...{ fetchpriority: "high" } as any}
           style={{ opacity: 1, zIndex: 0 }}
+          onError={() => {
+            rememberValidatedImageResult(baseUrl, false);
+            setBaseUrl(null);
+          }}
         />
       )}
 
       {/* Top layer — fades in during crossfade, then instantly hidden */}
       {topUrl && (
         <img
-          key={`top-${imgRevision}`}
           className={`hero-backdrop hero-backdrop-top${showTop ? " hero-backdrop-active" : ""}`}
           src={topUrl}
           alt=""
           style={{ zIndex: 1 }}
+          onError={() => {
+            rememberValidatedImageResult(topUrl, false);
+            setTopUrl(null);
+            setShowTop(false);
+            crossfadeRef.current = false;
+          }}
         />
       )}
 
@@ -325,14 +352,8 @@ export function HeroBanner({ items, isLoading = false }: HeroBannerProps) {
 
         <div className="hero-actions">
           <Link
-            to={`/player/${item.type}/${item.id}`}
-            className="btn btn-primary hero-btn"
-          >
-            <Play size={14} /> Play
-          </Link>
-          <Link
             to={`/details/${item.type}/${item.id}`}
-            className="btn btn-secondary hero-btn"
+            className="hero-pill hero-pill-secondary"
           >
             More Info
           </Link>
