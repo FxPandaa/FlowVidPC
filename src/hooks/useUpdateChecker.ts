@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from "react";
 import { platformFetch } from "../utils/platform";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://api.flow-vid.com";
-const FALLBACK_VERSION = import.meta.env.VITE_APP_VERSION || "1.0.0";
+const FALLBACK_VERSION = import.meta.env.VITE_APP_VERSION || "0.0.1";
 
 export interface UpdateCheckResult {
   currentVersion: string;

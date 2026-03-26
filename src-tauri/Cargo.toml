@@ -1,6 +1,6 @@
 [package]
 name = "flowvid"
-version = "1.0.1"
+version = "0.0.1"
 description = "FlowVid Desktop - Cross-platform streaming app"
 authors = ["FlowVid"]
 edition = "2021"

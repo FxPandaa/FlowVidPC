@@ -1,6 +1,6 @@
 {
   "productName": "FlowVid",
-  "version": "1.0.1",
+  "version": "0.0.1",
   "identifier": "com.flowvid.desktop",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -24,7 +24,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' https: data:; media-src 'self' https: http:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https: http://localhost:* http://* ws://localhost:* wss://*; frame-src https://www.youtube-nocookie.com https://www.youtube.com"
+      "csp": "default-src 'self'; img-src 'self' https: data:; media-src 'self' https: http:; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'self' https: http://localhost:* http://* wss://*; frame-src https://www.youtube-nocookie.com https://www.youtube.com"
     }
   },
   "bundle": {

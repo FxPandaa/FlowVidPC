@@ -31,7 +31,7 @@ FlowVid is a native streaming application that gives you a Netflix-like experien
 - **30+ subtitle languages** via OpenSubtitles, with timing offset and appearance customization
 - **Skip intro / Skip outro** via AniSkip + IntroDB
 - **Auto-play next episode**
-- **Discover page** powered by TMDB, filterable by genre, year, rating, and language
+- **Discover page** powered by TMDB and Cinemeta, filterable by genre, year, rating, and language
 - **Calendar** to track upcoming episodes for shows in your library
 
 ---
