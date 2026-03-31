@@ -10,15 +10,7 @@ export function OnboardingPage() {
     <div className="onboarding-page">
       <div className="onboarding-card">
         <div className="onboarding-icon">
-          <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <polygon points="6,3 42,24 6,45" fill="url(#ob-grad)" />
-            <defs>
-              <linearGradient id="ob-grad" x1="0" y1="0" x2="48" y2="48">
-                <stop offset="0%" stopColor="#00e5ff" />
-                <stop offset="100%" stopColor="#0066ff" />
-              </linearGradient>
-            </defs>
-          </svg>
+          <img src="/FlowVidLogo.png" alt="FlowVid" width={48} height={48} />
         </div>
 
         <h1 className="onboarding-title">Welcome to FlowVid</h1>

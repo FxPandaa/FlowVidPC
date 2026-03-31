@@ -92,22 +92,13 @@ export function Layout() {
       <header className={`header${isPlayer ? " header--hidden" : ""}`}>
         <nav className="nav">
           <NavLink to="/" className="logo">
-            <svg
+            <img
               className="logo-mark"
-              width="28"
-              height="28"
-              viewBox="0 0 32 32"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <polygon points="4,2 28,16 4,30" fill="url(#logo-grad)" />
-              <defs>
-                <linearGradient id="logo-grad" x1="0" y1="0" x2="32" y2="32">
-                  <stop offset="0%" stopColor="#00e5ff" />
-                  <stop offset="100%" stopColor="#0066ff" />
-                </linearGradient>
-              </defs>
-            </svg>
+              src="/FlowVidLogo.png"
+              alt="FlowVid"
+              width={28}
+              height={28}
+            />
             <span className="logo-text"><span className="logo-text-flow">Flow</span>Vid</span>
           </NavLink>
 

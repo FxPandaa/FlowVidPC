@@ -99,22 +99,13 @@ export function LoginPage() {
 
       <div className="login-container">
         <Link to="/" className="login-logo">
-          <svg
+          <img
             className="login-logo-mark"
-            width="32"
-            height="32"
-            viewBox="0 0 32 32"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <polygon points="4,2 28,16 4,30" fill="url(#login-logo-grad)" />
-            <defs>
-              <linearGradient id="login-logo-grad" x1="0" y1="0" x2="32" y2="32">
-                <stop offset="0%" stopColor="#00e5ff" />
-                <stop offset="100%" stopColor="#0066ff" />
-              </linearGradient>
-            </defs>
-          </svg>
+            src="/FlowVidLogo.png"
+            alt="FlowVid"
+            width={32}
+            height={32}
+          />
           <span className="logo-text"><span className="logo-text-flow">Flow</span>Vid</span>
         </Link>
 

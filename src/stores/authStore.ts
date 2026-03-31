@@ -55,7 +55,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await platformFetch(`${API_URL}/auth/login`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-FlowVid-Platform": "windows" },
             body: JSON.stringify({ email, password }),
           });
 
@@ -91,7 +91,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await platformFetch(`${API_URL}/auth/register`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-FlowVid-Platform": "windows" },
             body: JSON.stringify({ email, username, password }),
           });
 
@@ -131,7 +131,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const response = await platformFetch(`${API_URL}/auth/refresh`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "Content-Type": "application/json", "X-FlowVid-Platform": "windows" },
             body: JSON.stringify({ refreshToken }),
           });
 
